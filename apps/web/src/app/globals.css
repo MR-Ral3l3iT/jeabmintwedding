@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=Dancing+Script:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --sage: #6B7C5E;
+  --teal-dark: #1E3A3A;
+  --cream: #FAF7F2;
+  --gold: #C8A96E;
+}
+
+html {
+  scroll-behavior: smooth;
+  width: 100%;
+  min-height: 100%;
+  background-color: #F8F5EE;
+}
+
+body {
+  font-family: 'Prompt', sans-serif;
+  font-weight: 300;
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  width: 100%;
+  min-height: 100%;
+  background: linear-gradient(160deg, #EDF2E8 0%, #F8F5EE 60%, #E8EFE0 100%);
+  background-attachment: fixed;
+  color: #2C2C2C;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Dancing Script', 'Prompt', cursive;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+  .font-serif-cg {
+    font-family: 'Cormorant Garamond', 'Prompt', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+  .font-serif-cg-bold {
+    font-family: 'Cormorant Garamond', 'Prompt', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+}
+
+/* Envelope paper texture */
+.envelope-texture {
+  background-image: url('/assets/envelope-bg.png');
+  background-size: cover;
+  background-position: center;
+}
+.envelope-texture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 42%,
+    rgba(0, 0, 0, 0.22) 100%
+  );
+  pointer-events: none;
+}
+.card-texture {
+  background-image: url('/assets/card-bg.png');
+  background-size: cover;
+  background-position: center;
+}
+.perspective-1200 {
+  perspective: 1200px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+/* Envelope flap open */
+.env-flap-open {
+  transform: rotateX(-180deg);
+}
+
+/* Reveal on scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Divider */
+.gold-divider::before,
+.gold-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #E8D5A3, transparent);
+}

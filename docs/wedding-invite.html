@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jeab & Mint – Wedding Invitation</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Great+Vibes&family=Sarabun:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --sage: #6B7C5E; --sage-light: #8E9E80; --sage-pale: #D4DDC8;
+    --teal-dark: #1E3A3A; --cream: #FAF7F2; --gold: #C8A96E;
+    --gold-light: #E8D5A3; --text: #2C2C2C; --text-light: #6B6B6B;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Sarabun', sans-serif; background: var(--cream); color: var(--text); overflow-x: hidden; }
+
+  /* LOADING */
+  #loading { position: fixed; inset: 0; z-index: 9999; background: var(--teal-dark);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+    transition: opacity 0.8s ease, visibility 0.8s; }
+  #loading.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  .loading-monogram { font-family: 'Great Vibes', cursive; font-size: 4rem; color: var(--gold); animation: pulse 1.5s ease-in-out infinite; }
+  .loading-bar { width: 160px; height: 1px; background: rgba(200,169,110,0.3); position: relative; overflow: hidden; }
+  .loading-bar::after { content: ''; position: absolute; inset: 0; background: var(--gold); animation: loadSlide 1.8s ease forwards; }
+  @keyframes loadSlide { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* HERO */
+  #hero { min-height: 100vh; background: linear-gradient(160deg, #EDF2E8 0%, #F8F5EE 60%, #E8EFE0 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; padding: 2rem; }
+  .leaf-bg { position: absolute; pointer-events: none; opacity: 0.15; }
+  .leaf-bg.tl { top: -40px; left: -40px; width: 300px; transform: rotate(-15deg); }
+  .leaf-bg.br { bottom: -40px; right: -40px; width: 280px; transform: rotate(165deg); }
+  .leaf-bg.tr { top: 20px; right: -20px; width: 200px; transform: rotate(30deg); }
+
+  /* ENVELOPE */
+  .envelope-wrap { position: relative; perspective: 1200px; cursor: pointer; user-select: none; margin-bottom: 2rem; }
+  .envelope { width: 320px; height: 220px; position: relative; transform-style: preserve-3d;
+    transition: transform 0.3s ease; filter: drop-shadow(0 20px 40px rgba(30,58,58,0.2)); }
+  .envelope-wrap:hover .envelope { transform: translateY(-6px); }
+  .env-body { position: absolute; inset: 0; background: linear-gradient(145deg, #f0ebe2, #e8e0d4); border-radius: 4px; overflow: hidden; }
+  .env-fold-left, .env-fold-right { position: absolute; bottom: 0; width: 0; height: 0; border-style: solid; }
+  .env-fold-left { left: 0; border-width: 0 0 110px 160px; border-color: transparent transparent #ddd6c8 transparent; }
+  .env-fold-right { right: 0; border-width: 110px 160px 0 0; border-color: #d8d0c1 transparent transparent transparent; opacity: 0.6; }
+  .env-flap { position: absolute; top: 0; left: 0; right: 0; height: 50%; transform-origin: top center;
+    transform: rotateX(0deg); transition: transform 0.8s cubic-bezier(0.4,0,0.2,1); z-index: 10; }
+  .env-flap-inner { width: 100%; height: 200%; background: linear-gradient(160deg, #ede5d8, #e4dace);
+    clip-path: polygon(0 0, 100% 0, 50% 100%); position: relative; }
+  .env-flap-inner::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent); }
+  .envelope.open .env-flap { transform: rotateX(-180deg); }
+  .wax-seal { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 60px; height: 60px; z-index: 20; transition: transform 0.5s ease, opacity 0.5s ease; }
+  .seal-circle { width: 60px; height: 60px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #C8A96E, #8B6914);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 3px rgba(255,255,255,0.3); }
+  .seal-text { font-family: 'Great Vibes', cursive; color: var(--cream); font-size: 1.1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .envelope.open .wax-seal { opacity: 0; transform: translate(-50%,-50%) scale(0.5); }
+  .card-peek { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%) translateY(0);
+    width: 260px; transition: transform 1s cubic-bezier(0.34,1.56,0.64,1) 0.4s, opacity 0.5s ease 0.4s;
+    opacity: 0; z-index: 5; }
+  .envelope.open ~ .card-peek { transform: translateX(-50%) translateY(-80px); opacity: 1; }
+  .tap-hint { font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; color: var(--sage);
+    letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; animation: float 2s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+  .hero-top { text-align: center; margin-bottom: 2rem; opacity: 0; animation: fadeUp 1s ease 2s forwards; }
+  .hero-eyebrow { font-size: 0.75rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sage); margin-bottom: 0.5rem; }
+  .hero-dear { font-family: 'Great Vibes', cursive; font-size: 2.2rem; color: var(--teal-dark); }
+  .hero-names { text-align: center; margin-top: 3rem; opacity: 0; animation: fadeUp 1s ease 2.3s forwards; }
+  .names-display { font-family: 'Great Vibes', cursive; font-size: clamp(2.8rem,8vw,4.5rem); color: var(--teal-dark); line-height: 1; }
+  .names-amp { color: var(--gold); font-size: 0.7em; }
+  .names-date { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 0.2em; color: var(--sage); margin-top: 0.5rem; }
+  .scroll-down { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    color: var(--sage); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase;
+    opacity: 0; animation: fadeIn 1s ease 3.5s forwards; cursor: pointer; }
+  .scroll-arrow { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--sage), transparent); animation: scrollPulse 1.5s ease-in-out infinite; }
+  @keyframes scrollPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* SECTIONS */
+  section { padding: 5rem 1.5rem; max-width: 680px; margin: 0 auto; }
+  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s ease, transform 0.8s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .divider { display: flex; align-items: center; gap: 1rem; margin: 2rem 0; color: var(--gold); }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold-light), transparent); }
+  .section-label { font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--sage); margin-bottom: 0.5rem; }
+  .section-title { font-family: 'Great Vibes', cursive; font-size: 2.5rem; color: var(--teal-dark); margin-bottom: 0.5rem; }
+  .section-sub { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; color: var(--text-light); margin-bottom: 2rem; }
+
+  /* QUOTE */
+  #quote { text-align: center; background: var(--teal-dark); max-width: 100%; padding: 4rem 2rem; position: relative; overflow: hidden; }
+  #quote::before, #quote::after { content: ''; position: absolute; width: 200px; height: 200px; border-radius: 50%; background: rgba(107,124,94,0.15); }
+  #quote::before { top: -60px; left: -60px; } #quote::after { bottom: -60px; right: -60px; }
+  .quote-text { font-family: 'Cormorant Garamond', serif; font-size: clamp(1.1rem,3vw,1.4rem); font-style: italic; color: var(--gold-light); max-width: 500px; margin: 0 auto 1rem; line-height: 1.8; }
+  .quote-ref { font-size: 0.8rem; letter-spacing: 0.15em; color: var(--sage-pale); text-transform: uppercase; }
+
+  /* COUNTDOWN */
+  #countdown { text-align: center; }
+  .countdown-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; max-width: 400px; margin: 2rem auto; }
+  .countdown-unit { background: white; border-radius: 12px; padding: 1.2rem 0.5rem;
+    box-shadow: 0 4px 20px rgba(30,58,58,0.08); border: 1px solid var(--sage-pale); position: relative; overflow: hidden; }
+  .countdown-unit::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(to right, var(--sage), var(--gold)); }
+  .cd-num { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 600; color: var(--teal-dark); line-height: 1; display: block; }
+  .cd-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--sage); margin-top: 0.25rem; display: block; }
+
+  /* VENUE */
+  #details { text-align: center; }
+  .venue-card { background: white; border-radius: 16px; padding: 2.5rem 2rem;
+    box-shadow: 0 8px 40px rgba(30,58,58,0.08); border: 1px solid var(--sage-pale); margin: 1.5rem 0; position: relative; overflow: hidden; }
+  .venue-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(to right, var(--sage), var(--gold), var(--sage-light)); }
+  .venue-name { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--teal-dark); margin-bottom: 0.5rem; }
+  .venue-addr { font-size: 0.9rem; color: var(--text-light); line-height: 1.7; margin-bottom: 1.5rem; }
+  .map-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.5rem; border-radius: 40px;
+    background: var(--sage); color: white; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none; font-family: 'Cormorant Garamond', serif; transition: background 0.3s, transform 0.2s; }
+  .map-btn:hover { background: var(--teal-dark); transform: translateY(-2px); }
+  .timeline { display: flex; flex-direction: column; gap: 0; margin: 1.5rem 0; text-align: left; }
+  .timeline-item { display: flex; gap: 1rem; align-items: flex-start; padding: 0.8rem 0; border-bottom: 1px solid var(--sage-pale); }
+  .timeline-item:last-child { border-bottom: none; }
+  .tl-time { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--gold); min-width: 60px; }
+  .tl-event { font-size: 0.9rem; color: var(--text); line-height: 1.5; padding-top: 0.15rem; }
+
+  /* DRESS CODE */
+  #dresscode { text-align: center; }
+  .palette-row { display: flex; justify-content: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .swatch { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+  .swatch-circle { width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 3px solid white; transition: transform 0.3s; }
+  .swatch:hover .swatch-circle { transform: scale(1.15); }
+  .swatch-name { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--text-light); }
+  .dresscode-note { background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--sage-pale);
+    margin-top: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-style: italic; color: var(--text-light); line-height: 1.8; }
+
+  /* MANUAL */
+  #manual { text-align: center; }
+  .manual-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin: 1.5rem 0; }
+  .manual-card { background: white; border-radius: 12px; padding: 1.5rem 1rem;
+    box-shadow: 0 4px 16px rgba(30,58,58,0.06); border: 1px solid var(--sage-pale); text-align: center; transition: transform 0.3s, box-shadow 0.3s; }
+  .manual-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(30,58,58,0.12); }
+  .manual-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .manual-title { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-weight: 600; color: var(--teal-dark); margin-bottom: 0.25rem; }
+  .manual-desc { font-size: 0.8rem; color: var(--text-light); line-height: 1.5; }
+
+  /* RSVP SECTION */
+  #rsvp { text-align: center; background: linear-gradient(160deg, var(--teal-dark) 0%, #0F2626 100%);
+    max-width: 100%; padding: 5rem 2rem; position: relative; overflow: hidden; }
+  #rsvp::before { content: ''; position: absolute; width: 400px; height: 400px; border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.15); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  #rsvp::after { content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    border: 1px solid rgba(200,169,110,0.08); top: 50%; left: 50%; transform: translate(-50%,-50%); }
+  .rsvp-inner { position: relative; z-index: 1; }
+  .rsvp-title { font-family: 'Great Vibes', cursive; font-size: 3rem; color: var(--gold-light); margin-bottom: 0.5rem; }
+  .rsvp-sub { font-family: 'Cormorant Garamond', serif; font-style: italic; color: rgba(255,255,255,0.6); margin-bottom: 2rem; }
+  .rsvp-btn { display: inline-block; padding: 1rem 3rem; border-radius: 60px;
+    background: linear-gradient(135deg, var(--gold), #A8852E); color: var(--teal-dark);
+    font-weight: 600; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; letter-spacing: 0.1em;
+    text-decoration: none; text-transform: uppercase; box-shadow: 0 8px 30px rgba(200,169,110,0.4);
+    transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
+  .rsvp-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 12px 40px rgba(200,169,110,0.5); }
+  .rsvp-deadline { margin-top: 1.5rem; font-size: 0.8rem; color: rgba(255,255,255,0.4); letter-spacing: 0.1em; }
+
+  footer { background: var(--teal-dark); padding: 2rem; text-align: center; border-top: 1px solid rgba(200,169,110,0.2); }
+  .footer-monogram { font-family: 'Great Vibes', cursive; font-size: 2rem; color: var(--gold); display: block; margin-bottom: 0.5rem; }
+  footer p { font-size: 0.75rem; color: rgba(255,255,255,0.3); letter-spacing: 0.1em; }
+
+  /* ═══ MODAL BASE ═══ */
+  .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 1rem; overflow-y: auto; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: var(--cream); border-radius: 20px; padding: 2.5rem 2rem; max-width: 420px; width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.3); animation: modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    text-align: center; border: 1px solid var(--sage-pale); position: relative; margin: auto; }
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.85) translateY(20px); } }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.3rem; color: var(--text-light); cursor: pointer; line-height: 1; }
+  .modal-title { font-family: 'Great Vibes', cursive; font-size: 2.2rem; color: var(--teal-dark); margin-bottom: 0.75rem; }
+  .modal-sub { font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.6; }
+  .modal-input { width: 100%; padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--sage-pale);
+    background: white; font-family: 'Sarabun', sans-serif; font-size: 1rem; color: var(--text);
+    margin-bottom: 1rem; outline: none; transition: border-color 0.3s; }
+  .modal-input:focus { border-color: var(--sage); }
+  .modal-textarea { resize: vertical; min-height: 100px; }
+  .modal-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+  .btn-sage { flex: 1; padding: 0.8rem; border-radius: 8px; border: none; background: var(--sage); color: white;
+    font-family: 'Cormorant Garamond', serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+  .btn-sage:hover { background: var(--teal-dark); }
+  .btn-outline { flex: 1; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--sage-pale); background: white;
+    color: var(--text-light); font-family: 'Cormorant Garamond', serif; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+  .btn-outline:hover { background: var(--sage-pale); }
+  .btn-gold { width: 100%; padding: 0.9rem; border-radius: 8px; border: none;
+    background: linear-gradient(135deg, var(--gold), #A8852E); color: var(--teal-dark);
+    font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+  .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,169,110,0.4); }
+  .step-hide { display: none; }
+  .step-show { display: block; }
+  .success-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  /* ═══ RSVP — STEP 2A: ATTENDING (LINE OA) ═══ */
+  .line-oa-box { background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--sage-pale); text-align: left; }
+  .line-oa-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--teal-dark); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+  .line-steps { counter-reset: linestep; display: flex; flex-direction: column; gap: 0.8rem; }
+  .line-step { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+  .line-step-num { min-width: 24px; height: 24px; border-radius: 50%; background: #06C755; color: white;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; }
+  .line-id-chip { display: inline-flex; align-items: center; gap: 0.4rem; background: #f0faf2; border: 1px solid #c3e6cb;
+    border-radius: 6px; padding: 0.4rem 0.8rem; font-family: monospace; font-size: 0.9rem; color: var(--teal-dark);
+    margin: 0.4rem 0; cursor: pointer; transition: background 0.2s; }
+  .line-id-chip:hover { background: #d4edda; }
+  .copy-badge { font-size: 0.65rem; background: var(--sage); color: white; border-radius: 4px; padding: 0.15rem 0.4rem; }
+  .line-add-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;
+    padding: 0.85rem; border-radius: 10px; background: #06C755; color: white; border: none;
+    font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.75rem; text-decoration: none;
+    transition: background 0.2s, transform 0.2s; }
+  .line-add-btn:hover { background: #05a847; transform: translateY(-2px); }
+
+  /* ═══ RSVP — STEP 2B: NOT ATTENDING ═══ */
+  .tabs { display: flex; gap: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--sage-pale); margin-bottom: 1.5rem; }
+  .tab-btn { flex: 1; padding: 0.7rem; background: white; border: none; font-family: 'Cormorant Garamond', serif;
+    font-size: 0.95rem; cursor: pointer; color: var(--text-light); transition: all 0.2s; }
+  .tab-btn.active { background: var(--sage); color: white; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* PromptPay QR */
+  .qr-container { background: white; border-radius: 12px; padding: 1.5rem; border: 1px solid var(--sage-pale); }
+  .qr-label { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600; color: var(--teal-dark); margin-bottom: 1rem; }
+  .qr-img-wrap { background: white; border-radius: 10px; padding: 1rem; display: inline-block; border: 2px solid var(--sage-pale); margin-bottom: 1rem; }
+  .qr-img-wrap svg { display: block; }
+  .promptpay-num { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.1em; color: var(--teal-dark); font-family: monospace; }
+  .copy-pp-btn { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; padding: 0.5rem 1.2rem;
+    border-radius: 6px; background: var(--sage-pale); color: var(--sage); border: none; cursor: pointer;
+    font-size: 0.85rem; font-family: 'Sarabun', sans-serif; transition: background 0.2s; }
+  .copy-pp-btn:hover { background: var(--sage); color: white; }
+  .qr-note { font-size: 0.75rem; color: var(--text-light); margin-top: 0.75rem; line-height: 1.5; }
+
+  /* Wish card */
+  .wish-form { text-align: left; }
+  .wish-form label { font-size: 0.8rem; color: var(--text-light); letter-spacing: 0.05em; display: block; margin-bottom: 0.3rem; }
+  .char-count { font-size: 0.7rem; color: var(--text-light); text-align: right; margin-top: -0.6rem; margin-bottom: 0.8rem; }
+  .wish-sent-box { background: #f0f7ee; border-radius: 12px; padding: 1.5rem; border: 1px solid #c3d9bb; text-align: center; }
+  .wish-sent-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .wish-sent-title { font-family: 'Great Vibes', cursive; font-size: 1.8rem; color: var(--teal-dark); }
+  .wish-sent-sub { font-size: 0.85rem; color: var(--text-light); margin-top: 0.3rem; }
+
+  /* ═══ ADMIN PAGE ═══ */
+  #adminPage { display: none; position: fixed; inset: 0; z-index: 5000; background: var(--cream); overflow-y: auto; }
+  #adminPage.show { display: block; }
+  .admin-wrap { max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .admin-header { text-align: center; padding: 2rem 0 1.5rem; border-bottom: 1px solid var(--sage-pale); margin-bottom: 1.5rem; }
+  .admin-title { font-family: 'Great Vibes', cursive; font-size: 2.5rem; color: var(--teal-dark); }
+  .admin-sub { font-size: 0.85rem; color: var(--text-light); margin-top: 0.3rem; }
+  .admin-close-btn { position: fixed; top: 1rem; right: 1rem; background: var(--teal-dark); color: white;
+    border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer; z-index: 5001; }
+  .wish-card-admin { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
+    box-shadow: 0 2px 12px rgba(30,58,58,0.07); border-left: 4px solid var(--sage); }
+  .wish-card-from { font-size: 0.7rem; color: var(--sage); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.4rem; }
+  .wish-card-name { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--teal-dark); }
+  .wish-card-msg { font-size: 0.9rem; color: var(--text); line-height: 1.6; margin-top: 0.4rem; font-style: italic; }
+  .wish-card-time { font-size: 0.7rem; color: var(--text-light); margin-top: 0.5rem; }
+  .admin-empty { text-align: center; padding: 3rem; color: var(--text-light); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; }
+  .admin-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+  .stat-box { background: white; border-radius: 10px; padding: 1rem; text-align: center; border: 1px solid var(--sage-pale); }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: var(--teal-dark); }
+  .stat-label { font-size: 0.7rem; color: var(--sage); letter-spacing: 0.1em; text-transform: uppercase; }
+  .admin-login { max-width: 340px; margin: 6rem auto; background: white; border-radius: 16px; padding: 2.5rem 2rem;
+    box-shadow: 0 8px 40px rgba(30,58,58,0.12); border: 1px solid var(--sage-pale); text-align: center; }
+
+  /* LINE OA Guide modal */
+  .line-guide-modal .modal-box { max-width: 500px; text-align: left; }
+  .guide-step { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: flex-start; }
+  .guide-num { min-width: 32px; height: 32px; border-radius: 50%; background: var(--sage); color: white;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 0.9rem; }
+  .guide-text { font-size: 0.88rem; line-height: 1.6; color: var(--text); padding-top: 0.3rem; }
+  .guide-link { color: var(--sage); text-decoration: underline; word-break: break-all; }
+  .guide-note { background: #fff8e6; border: 1px solid #ffe0a0; border-radius: 8px; padding: 0.8rem 1rem;
+    font-size: 0.82rem; color: #7a5a00; line-height: 1.5; margin-top: 0.5rem; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @media (max-width: 480px) {
+    .envelope { width: 280px; height: 195px; }
+    .env-fold-left { border-width: 0 0 97px 140px; }
+    .env-fold-right { border-width: 97px 140px 0 0; }
+    .countdown-grid { gap: 0.6rem; }
+    .cd-num { font-size: 1.8rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="loading-monogram">NP</div>
+  <div class="loading-bar"></div>
+  <div style="font-family:'Cormorant Garamond',serif;color:rgba(200,169,110,0.6);font-size:0.8rem;letter-spacing:0.2em;text-transform:uppercase;margin-top:0.5rem;">Jeab & Mint</div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div id="adminPage">
+  <button class="admin-close-btn" onclick="closeAdmin()">✕ ปิด</button>
+  <div class="admin-wrap">
+    <div id="adminLogin" class="admin-login">
+      <div style="font-family:'Great Vibes',cursive;font-size:2rem;color:var(--teal-dark);margin-bottom:0.5rem;">Admin</div>
+      <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:1.5rem;">เฉพาะเจ้าบ่าว-เจ้าสาว</div>
+      <input class="modal-input" id="adminPwInput" type="password" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')checkAdminPw()">
+      <button class="btn-sage" style="width:100%;margin-top:0.5rem;" onclick="checkAdminPw()">เข้าสู่ระบบ</button>
+      <div id="adminPwErr" style="color:#c0392b;font-size:0.8rem;margin-top:0.75rem;display:none;">รหัสผ่านไม่ถูกต้อง</div>
+    </div>
+    <div id="adminContent" style="display:none;">
+      <div class="admin-header">
+        <div class="admin-title">Jeab & Mint</div>
+        <div class="admin-sub">การ์ดอวยพรจากแขก ✨</div>
+      </div>
+      <div class="admin-stats">
+        <div class="stat-box"><div class="stat-num" id="statAttend">0</div><div class="stat-label">เข้าร่วม</div></div>
+        <div class="stat-box"><div class="stat-num" id="statDecline">0</div><div class="stat-label">ไม่สะดวก</div></div>
+        <div class="stat-box"><div class="stat-num" id="statWishes">0</div><div class="stat-label">การ์ดอวยพร</div></div>
+      </div>
+      <div id="wishList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div id="hero">
+  <svg class="leaf-bg tl" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20,200 Q80,150 60,80 Q100,40 150,20" stroke="#6B7C5E" stroke-width="2" fill="none"/>
+    <ellipse cx="70" cy="120" rx="35" ry="18" fill="#6B7C5E" transform="rotate(-30 70 120)"/>
+    <ellipse cx="100" cy="70" rx="28" ry="14" fill="#6B7C5E" transform="rotate(-50 100 70)"/>
+    <ellipse cx="130" cy="40" rx="20" ry="10" fill="#8E9E80" transform="rotate(-60 130 40)"/>
+    <ellipse cx="45" cy="155" rx="22" ry="11" fill="#8E9E80" transform="rotate(-20 45 155)"/>
+  </svg>
+  <svg class="leaf-bg br" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20,200 Q80,150 60,80 Q100,40 150,20" stroke="#6B7C5E" stroke-width="2" fill="none"/>
+    <ellipse cx="70" cy="120" rx="35" ry="18" fill="#6B7C5E" transform="rotate(-30 70 120)"/>
+    <ellipse cx="100" cy="70" rx="28" ry="14" fill="#6B7C5E" transform="rotate(-50 100 70)"/>
+  </svg>
+  <svg class="leaf-bg tr" viewBox="0 0 150 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M10,180 Q60,120 50,60" stroke="#8E9E80" stroke-width="1.5" fill="none"/>
+    <ellipse cx="55" cy="100" rx="25" ry="12" fill="#8E9E80" transform="rotate(20 55 100)"/>
+    <ellipse cx="70" cy="55" rx="18" ry="9" fill="#6B7C5E" transform="rotate(35 70 55)"/>
+  </svg>
+
+  <div class="hero-top">
+    <div class="hero-eyebrow">คุณได้รับเชิญ</div>
+    <div class="hero-dear">ยินดีต้อนรับ</div>
+  </div>
+
+  <div class="envelope-wrap" id="envelopeWrap" onclick="openEnvelope()">
+    <div class="envelope" id="envelope">
+      <div class="env-body">
+        <div class="env-fold-left"></div>
+        <div class="env-fold-right"></div>
+      </div>
+      <div class="env-flap"><div class="env-flap-inner"></div></div>
+      <div class="wax-seal"><div class="seal-circle"><span class="seal-text">NP</span></div></div>
+    </div>
+    <div class="card-peek" id="cardPeek" style="display:none;">
+      <div style="background:white;border-radius:8px;padding:1rem;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.15);border:1px solid #D4DDC8;">
+        <div style="font-family:'Great Vibes',cursive;font-size:1.5rem;color:#1E3A3A;">Jeab & Mint</div>
+        <div style="font-size:0.7rem;letter-spacing:0.15em;color:#6B7C5E;margin-top:0.2rem;">31 · X · 2569</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1rem;">
+      <div class="tap-hint" id="tapHint">แตะเพื่อเปิดซอง ✦</div>
+    </div>
+  </div>
+
+  <div class="hero-names" id="heroNames" style="display:none;">
+    <div class="names-display">Jeab <span class="names-amp">&</span> Mint</div>
+    <div class="names-date">31 ตุลาคม 2569</div>
+  </div>
+
+  <div class="scroll-down" onclick="document.getElementById('quote').scrollIntoView({behavior:'smooth'})">
+    <div class="scroll-arrow"></div>
+    <span>เลื่อนลง</span>
+  </div>
+</div>
+
+<!-- QUOTE -->
+<section id="quote" style="max-width:100%;">
+  <div class="quote-text reveal">"เพราะฉะนั้น สิ่งที่พระเจ้าทรงผูกพันกันแล้ว อย่าให้มนุษย์แยกออกจากกันเลย"</div>
+  <div class="quote-ref reveal">มัทธิว 19:6</div>
+</section>
+
+<!-- COUNTDOWN -->
+<section id="countdown">
+  <div class="reveal">
+    <div class="section-label">นับถอยหลัง</div>
+    <div class="section-title">ใกล้วันสำคัญแล้ว</div>
+    <div class="section-sub">วันแต่งงานของ Jeab & Mint</div>
+  </div>
+  <div class="countdown-grid reveal">
+    <div class="countdown-unit"><span class="cd-num" id="cd-days">—</span><span class="cd-label">วัน</span></div>
+    <div class="countdown-unit"><span class="cd-num" id="cd-hours">—</span><span class="cd-label">ชั่วโมง</span></div>
+    <div class="countdown-unit"><span class="cd-num" id="cd-min">—</span><span class="cd-label">นาที</span></div>
+    <div class="countdown-unit"><span class="cd-num" id="cd-sec">—</span><span class="cd-label">วินาที</span></div>
+  </div>
+  <div class="divider reveal"><span>✦</span></div>
+</section>
+
+<!-- VENUE -->
+<section id="details">
+  <div class="reveal">
+    <div class="section-label">สถานที่จัดงาน</div>
+    <div class="section-title">Local</div>
+  </div>
+  <div class="venue-card reveal">
+    <div class="venue-name">ณ ลาภาอมรประสงค์</div>
+    <div class="venue-addr">กรุงเทพมหานคร</div>
+    <div class="timeline">
+      <div class="timeline-item"><div class="tl-time">14:00</div><div class="tl-event">พิธีรับขวัญเนา</div></div>
+      <div class="timeline-item"><div class="tl-time">15:30</div><div class="tl-event">พิธีมอบน้ำพระพุทธมนต์</div></div>
+      <div class="timeline-item"><div class="tl-time">18:30</div><div class="tl-event">งานเลี้ยงฉลองมงคลสมรส</div></div>
+    </div>
+    <a href="https://maps.google.com" target="_blank" class="map-btn">📍 ดูเส้นทาง</a>
+  </div>
+</section>
+
+<!-- DRESS CODE -->
+<section id="dresscode">
+  <div class="reveal">
+    <div class="section-label">การแต่งกาย</div>
+    <div class="section-title">Palette ของงาน</div>
+    <div class="section-sub">Formal Dress Code</div>
+  </div>
+  <div class="palette-row reveal">
+    <div class="swatch"><div class="swatch-circle" style="background:#5C3D2E;"></div><span class="swatch-name">Mocha</span></div>
+    <div class="swatch"><div class="swatch-circle" style="background:#7B4F3A;"></div><span class="swatch-name">Copper</span></div>
+    <div class="swatch"><div class="swatch-circle" style="background:#4A5C3F;"></div><span class="swatch-name">Forest</span></div>
+    <div class="swatch"><div class="swatch-circle" style="background:#2C3E30;"></div><span class="swatch-name">Teal</span></div>
+    <div class="swatch"><div class="swatch-circle" style="background:#1E3A3A;"></div><span class="swatch-name">Dark Teal</span></div>
+  </div>
+  <div class="dresscode-note reveal">เรียนแขกผู้มีเกียรติทุกท่าน<br>รบกวนสวมใส่ชุดในโทนสีของงานด้วยนะคะ เพื่อความสวยงามในภาพถ่ายของพวกเรา 🌿</div>
+</section>
+
+<!-- MANUAL -->
+<section id="manual">
+  <div class="reveal">
+    <div class="section-label">สำหรับแขก</div>
+    <div class="section-title">คู่มือแขก</div>
+  </div>
+  <div class="manual-grid reveal">
+    <div class="manual-card"><div class="manual-icon">⏰</div><div class="manual-title">มาก่อนเวลา</div><div class="manual-desc">กรุณามาสักครู่ก่อนพิธีเริ่ม</div></div>
+    <div class="manual-card"><div class="manual-icon">👗</div><div class="manual-title">ขาว? สงวนให้เจ้าสาว</div><div class="manual-desc">งดสวมชุดสีขาวนะคะ 😊</div></div>
+    <div class="manual-card"><div class="manual-icon">✨</div><div class="manual-title">เพลิดเพลินไปกับงาน</div><div class="manual-desc">ใช้สายตาสวยๆ ชมงานให้เต็มที่</div></div>
+    <div class="manual-card"><div class="manual-icon">📷</div><div class="manual-title">อย่าขวางช่างภาพ</div><div class="manual-desc">ให้ช่างเก็บภาพสวยๆ ก่อนนะ!</div></div>
+  </div>
+</section>
+
+<!-- RSVP -->
+<section id="rsvp" style="max-width:100%;">
+  <div class="rsvp-inner reveal">
+    <div class="rsvp-title">ยืนยันการเข้าร่วม</div>
+    <div class="rsvp-sub">กรุณาตอบรับภายในวันที่ 15 ตุลาคม 2569</div>
+    <div class="rsvp-btn" onclick="openRsvpModal()">ขอยืนยันเข้าร่วมงาน</div>
+    <div class="rsvp-deadline">กรุณาแจ้งล่วงหน้าก่อนวันงาน</div>
+  </div>
+</section>
+
+<footer>
+  <span class="footer-monogram">Jeab & Mint</span>
+  <p>31 ตุลาคม 2569 · กรุงเทพมหานคร</p>
+  <p style="margin-top:0.3rem;font-size:0.65rem;">ด้วยความรักและความสุข 💚</p>
+  <p style="margin-top:1rem;font-size:0.6rem;opacity:0.3;cursor:pointer;" onclick="openAdmin()">⚙</p>
+</footer>
+
+<!-- ═══ RSVP MODAL ═══ -->
+<div class="modal-overlay" id="rsvpModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('rsvpModal')">✕</button>
+
+    <!-- STEP 1: Name + Choice -->
+    <div id="step1">
+      <div class="modal-title">ยืนยันการเข้าร่วม</div>
+      <div class="modal-sub">กรุณากรอกชื่อและเลือกการตอบรับ</div>
+      <input class="modal-input" id="guestName" type="text" placeholder="ชื่อของท่าน *">
+      <div class="modal-row">
+        <button class="btn-sage" onclick="chooseRsvp(true)">✓ เข้าร่วมงาน</button>
+        <button class="btn-outline" onclick="chooseRsvp(false)">✗ ไม่สะดวก</button>
+      </div>
+    </div>
+
+    <!-- STEP 2A: ATTENDING → LINE OA -->
+    <div id="step2a" class="step-hide">
+      <div class="modal-title" style="color:#06C755;">ยินดีมาก! 🎉</div>
+      <div class="modal-sub" id="step2aName"></div>
+      <div class="line-oa-box">
+        <div class="line-oa-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#06C755"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.79 1.35 5.27 3.46 6.96L4.5 22l4.26-2.2C9.77 20.25 10.87 20.5 12 20.5c5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+          เพิ่ม LINE OA เพื่อรับข้อมูลงาน
+        </div>
+        <div class="line-steps">
+          <div class="line-step"><div class="line-step-num">1</div><div>กด <strong>"เพิ่มเพื่อน"</strong> ด้านล่าง หรือค้นหาใน LINE</div></div>
+          <div class="line-step"><div class="line-step-num">2</div>
+            <div>ค้นหา ID:
+              <div class="line-id-chip" onclick="copyLineId(this)" title="แตะเพื่อ copy">
+                <span>@jeabmint2569</span>
+                <span class="copy-badge">COPY</span>
+              </div>
+            </div>
+          </div>
+          <div class="line-step"><div class="line-step-num">3</div><div>รับข้อความต้อนรับ + อัปเดตข้อมูลงาน และร่วมสนุกเกมในวันงาน 🎮</div></div>
+        </div>
+        <a href="https://line.me/R/ti/p/@jeabmint2569" target="_blank" class="line-add-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.03 2 11c0 2.79 1.35 5.27 3.46 6.96L4.5 22l4.26-2.2C9.77 20.25 10.87 20.5 12 20.5c5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+          เพิ่มเพื่อนใน LINE
+        </a>
+      </div>
+      <div class="guide-note" style="margin-top:1rem;">
+        💡 <strong>ยังไม่มี LINE OA?</strong> ไม่ต้องกังวล — กด <span style="color:var(--sage);cursor:pointer;text-decoration:underline;" onclick="openLineGuide()">ดูวิธีสร้าง LINE OA</span> ใช้เวลาแค่ 5 นาทีค่ะ
+      </div>
+    </div>
+
+    <!-- STEP 2B: NOT ATTENDING → Wish + PromptPay -->
+    <div id="step2b" class="step-hide">
+      <div class="modal-title">ขอบคุณที่แจ้งนะคะ 🌿</div>
+      <div class="modal-sub" id="step2bName">แม้ไม่ได้มา ก็ฝากคำอวยพรและน้ำใจให้คู่บ่าวสาวได้เลยนะคะ</div>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('wishTab', this)">💌 การ์ดอวยพร</button>
+        <button class="tab-btn" onclick="switchTab('payTab', this)">💸 ช่วยงาน</button>
+      </div>
+
+      <!-- Wish Tab -->
+      <div id="wishTab" class="tab-panel active">
+        <div id="wishFormWrap" class="wish-form">
+          <label>ข้อความถึง Jeab & Mint</label>
+          <textarea class="modal-input modal-textarea" id="wishMsg" placeholder="ขอให้มีความสุขมากๆ นะคะ..." maxlength="300" oninput="updateCharCount()"></textarea>
+          <div class="char-count"><span id="charCount">0</span>/300</div>
+          <button class="btn-gold" onclick="submitWish()">ส่งการ์ดอวยพร 💌</button>
+        </div>
+        <div id="wishSent" class="wish-sent-box" style="display:none;">
+          <div class="wish-sent-icon">💌</div>
+          <div class="wish-sent-title">ส่งแล้วค่ะ!</div>
+          <div class="wish-sent-sub">ขอบคุณมากนะคะ Jeab & Mint จะอ่านทุกข้อความเลย 🥹</div>
+        </div>
+      </div>
+
+      <!-- Pay Tab -->
+      <div id="payTab" class="tab-panel">
+        <div class="qr-container">
+          <div class="qr-label">โอนผ่าน PromptPay</div>
+          <!-- PromptPay QR: generated pattern for 0812345678 (placeholder) -->
+          <div style="text-align:center;">
+            <div class="qr-img-wrap">
+              <svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+                <!-- QR code placeholder pattern — replace with real QR image -->
+                <rect width="160" height="160" fill="white"/>
+                <!-- Finder patterns -->
+                <rect x="10" y="10" width="40" height="40" fill="#1E3A3A" rx="3"/>
+                <rect x="15" y="15" width="30" height="30" fill="white" rx="2"/>
+                <rect x="20" y="20" width="20" height="20" fill="#1E3A3A" rx="1"/>
+                <rect x="110" y="10" width="40" height="40" fill="#1E3A3A" rx="3"/>
+                <rect x="115" y="15" width="30" height="30" fill="white" rx="2"/>
+                <rect x="120" y="20" width="20" height="20" fill="#1E3A3A" rx="1"/>
+                <rect x="10" y="110" width="40" height="40" fill="#1E3A3A" rx="3"/>
+                <rect x="15" y="115" width="30" height="30" fill="white" rx="2"/>
+                <rect x="20" y="120" width="20" height="20" fill="#1E3A3A" rx="1"/>
+                <!-- Data modules (decorative) -->
+                <rect x="60" y="10" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="10" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="10" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="10" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="22" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="22" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="34" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="34" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="34" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="46" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="46" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="58" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="58" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="58" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="58" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="10" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="22" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="34" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="46" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="10" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="34" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="10" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="22" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="46" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="10" y="96" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="34" y="96" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="46" y="96" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="120" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="144" y="60" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="72" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="120" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="144" y="84" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="96" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="96" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="120" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="120" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="120" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="60" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="84" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="72" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="96" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="120" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="144" y="108" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="120" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="120" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="120" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="144" y="132" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="108" y="144" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="120" y="144" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="132" y="144" width="8" height="8" fill="#1E3A3A"/>
+                <rect x="144" y="144" width="8" height="8" fill="#1E3A3A"/>
+                <!-- PromptPay logo center -->
+                <rect x="66" y="66" width="28" height="28" fill="white" rx="4"/>
+                <text x="80" y="85" text-anchor="middle" font-size="16">💳</text>
+              </svg>
+            </div>
+            <div class="promptpay-num" id="ppNum">081-234-5678</div>
+            <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.2rem;">ชื่อบัญชี: นิยมรณา เอกเพ็ญกาศ</div>
+            <button class="copy-pp-btn" onclick="copyPromptPay()">📋 คัดลอกเบอร์</button>
+          </div>
+          <div class="qr-note">
+            ⚠️ QR Code นี้เป็น placeholder — กรุณาแทนที่ด้วย QR จริงจากแอปธนาคารของท่านค่ะ<br>
+            (เปิดแอปธนาคาร → รับเงิน → บันทึก QR → นำมาใส่แทน)
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end modal-box -->
+</div><!-- end rsvpModal -->
+
+<!-- LINE OA GUIDE MODAL -->
+<div class="modal-overlay line-guide-modal" id="lineGuideModal">
+  <div class="modal-box" style="max-width:500px;text-align:left;">
+    <button class="modal-close" onclick="closeModal('lineGuideModal')">✕</button>
+    <div style="font-family:'Great Vibes',cursive;font-size:2rem;color:#06C755;margin-bottom:0.3rem;">LINE OA</div>
+    <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:1.5rem;">วิธีสร้าง LINE Official Account (ฟรี)</div>
+    <div class="guide-step">
+      <div class="guide-num">1</div>
+      <div class="guide-text">ไปที่ <a href="https://manager.line.biz" target="_blank" class="guide-link">manager.line.biz</a> แล้วกด <strong>"สร้างบัญชี"</strong> ล็อกอินด้วย LINE ส่วนตัว</div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">2</div>
+      <div class="guide-text">เลือก <strong>"LINE Official Account"</strong> → กรอกชื่อบัญชี เช่น <em>"Jeab & Mint Wedding"</em> → เลือกประเภท "บุคคลทั่วไป"</div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">3</div>
+      <div class="guide-text">หลังสร้างเสร็จ ไปที่ <strong>หน้าแรก → ข้อมูลบัญชี</strong> จะได้ <strong>LINE ID</strong> (เช่น @jeabmint2569) นำมาใส่ในเว็บนี้</div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">4</div>
+      <div class="guide-text">ตั้ง <strong>ข้อความต้อนรับ (Welcome Message)</strong>: ไปที่ Chat → ตั้งค่า → ข้อความตอบกลับอัตโนมัติ ตั้งข้อความต้อนรับเมื่อแขกเพิ่มเพื่อน เช่น<br><br>
+        <span style="background:#f5f5f5;padding:0.5rem 0.75rem;border-radius:6px;font-size:0.82rem;display:block;line-height:1.6;">
+        "สวัสดีค่ะ! ขอบคุณที่เพิ่มเพื่อนนะคะ 💚<br>
+        ยินดีต้อนรับสู่งานแต่งงาน Jeab & Mint<br>
+        31 ตุลาคม 2569 เวลา 14:00 น.<br>
+        ติดตามอัปเดตและเกมสนุกๆ ได้ที่นี่เลยค่ะ 🎉"
+        </span>
+      </div>
+    </div>
+    <div class="guide-step">
+      <div class="guide-num">5</div>
+      <div class="guide-text">แจ้ง LINE ID ใหม่ให้เราทราบ เพื่ออัปเดตลิงก์ในเว็บค่ะ</div>
+    </div>
+    <div class="guide-note">
+      💡 แผน <strong>Free</strong> ส่งข้อความ Broadcast ได้ 200 ข้อความ/เดือน เพียงพอสำหรับงานแต่งงานค่ะ
+    </div>
+    <button class="btn-gold" style="width:100%;margin-top:1.25rem;" onclick="window.open('https://manager.line.biz','_blank')">
+      เปิด LINE Official Account Manager →
+    </button>
+  </div>
+</div>
+
+<script>
+// ── STORAGE helpers (localStorage) ──
+const DB = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e) { return []; } },
+  set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} },
+  push: (k, item) => { const arr = DB.get(k); arr.push(item); DB.set(k, arr); }
+};
+
+// ── LOADING ──
+window.addEventListener('load', () => { setTimeout(() => document.getElementById('loading').classList.add('hide'), 2000); });
+
+// ── ENVELOPE ──
+let envelopeOpened = false;
+function openEnvelope() {
+  if (envelopeOpened) return;
+  envelopeOpened = true;
+  const env = document.getElementById('envelope');
+  const tapHint = document.getElementById('tapHint');
+  const heroNames = document.getElementById('heroNames');
+  const cardPeek = document.getElementById('cardPeek');
+  env.classList.add('open');
+  tapHint.style.opacity = '0';
+  setTimeout(() => { cardPeek.style.display = 'block'; }, 300);
+  setTimeout(() => {
+    heroNames.style.display = 'block';
+    heroNames.style.opacity = '0'; heroNames.style.transform = 'translateY(20px)';
+    requestAnimationFrame(() => {
+      heroNames.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+      heroNames.style.opacity = '1'; heroNames.style.transform = 'translateY(0)';
+    });
+  }, 900);
+}
+
+// ── COUNTDOWN ──
+const weddingDate = new Date('2026-10-31T14:00:00+07:00');
+function updateCountdown() {
+  const diff = weddingDate - new Date();
+  if (diff <= 0) { ['cd-days','cd-hours','cd-min','cd-sec'].forEach(id => document.getElementById(id).textContent = '0'); return; }
+  document.getElementById('cd-days').textContent = String(Math.floor(diff/86400000)).padStart(2,'0');
+  document.getElementById('cd-hours').textContent = String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+  document.getElementById('cd-min').textContent = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+  document.getElementById('cd-sec').textContent = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+}
+updateCountdown(); setInterval(updateCountdown, 1000);
+
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach((el,i) => { el.style.transitionDelay = `${(i%3)*0.12}s`; observer.observe(el); });
+
+// ── MODAL HELPERS ──
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', function(e) { if(e.target===this) this.classList.remove('show'); }));
+
+// ── RSVP FLOW ──
+let currentAttending = null;
+function openRsvpModal() {
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2a').className = 'step-hide';
+  document.getElementById('step2b').className = 'step-hide';
+  document.getElementById('guestName').value = '';
+  document.getElementById('wishMsg').value = '';
+  document.getElementById('wishSent').style.display = 'none';
+  document.getElementById('wishFormWrap').style.display = 'block';
+  updateCharCount();
+  openModal('rsvpModal');
+}
+
+function chooseRsvp(attending) {
+  const name = document.getElementById('guestName').value.trim();
+  if (!name) { document.getElementById('guestName').focus(); document.getElementById('guestName').style.borderColor='#c0392b'; return; }
+  document.getElementById('guestName').style.borderColor='';
+  currentAttending = attending;
+  // Save RSVP
+  DB.push('rsvps', { name, attending, ts: new Date().toISOString() });
+  // Show step
+  document.getElementById('step1').style.display = 'none';
+  if (attending) {
+    document.getElementById('step2aName').textContent = `ดีใจมากที่ ${name} จะมาร่วมงานนะคะ! 💚`;
+    document.getElementById('step2a').className = 'step-show';
+  } else {
+    document.getElementById('step2bName').textContent = `ขอบคุณ ${name} ที่แจ้งมานะคะ 🌿 ฝากอวยพรหรือช่วยงานได้เลยค่ะ`;
+    document.getElementById('step2b').className = 'step-show';
+  }
+}
+
+// ── TABS ──
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── WISH ──
+function updateCharCount() {
+  const len = (document.getElementById('wishMsg').value || '').length;
+  document.getElementById('charCount').textContent = len;
+}
+function submitWish() {
+  const msg = document.getElementById('wishMsg').value.trim();
+  if (!msg) { document.getElementById('wishMsg').focus(); return; }
+  const rsvps = DB.get('rsvps');
+  const lastName = rsvps.length ? rsvps[rsvps.length-1].name : 'แขก';
+  DB.push('wishes', { name: lastName, message: msg, ts: new Date().toISOString() });
+  document.getElementById('wishFormWrap').style.display = 'none';
+  document.getElementById('wishSent').style.display = 'block';
+}
+
+// ── COPY PROMPTPAY ──
+function copyPromptPay() {
+  const num = document.getElementById('ppNum').textContent.replace(/-/g,'');
+  navigator.clipboard.writeText(num).then(() => {
+    const btn = document.querySelector('.copy-pp-btn');
+    btn.textContent = '✓ คัดลอกแล้ว!'; btn.style.background = 'var(--sage)'; btn.style.color = 'white';
+    setTimeout(() => { btn.textContent = '📋 คัดลอกเบอร์'; btn.style.background=''; btn.style.color=''; }, 2000);
+  });
+}
+
+// ── COPY LINE ID ──
+function copyLineId(el) {
+  const id = el.querySelector('span:first-child').textContent;
+  navigator.clipboard.writeText(id).then(() => {
+    const badge = el.querySelector('.copy-badge');
+    badge.textContent = '✓ COPIED'; badge.style.background = '#06C755';
+    setTimeout(() => { badge.textContent = 'COPY'; badge.style.background = ''; }, 2000);
+  });
+}
+
+// ── LINE GUIDE ──
+function openLineGuide() { closeModal('rsvpModal'); openModal('lineGuideModal'); }
+
+// ── ADMIN ──
+const ADMIN_PW = 'jeabmint2569'; // เปลี่ยนรหัสผ่านได้ตรงนี้
+function openAdmin() {
+  document.getElementById('adminPage').classList.add('show');
+  document.getElementById('adminLogin').style.display = 'block';
+  document.getElementById('adminContent').style.display = 'none';
+  document.getElementById('adminPwInput').value = '';
+  document.getElementById('adminPwErr').style.display = 'none';
+}
+function closeAdmin() { document.getElementById('adminPage').classList.remove('show'); }
+function checkAdminPw() {
+  if (document.getElementById('adminPwInput').value === ADMIN_PW) {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    loadWishes();
+  } else {
+    document.getElementById('adminPwErr').style.display = 'block';
+  }
+}
+document.getElementById('adminPwInput').addEventListener('keydown', e => { if(e.key==='Enter') checkAdminPw(); });
+function loadWishes() {
+  const wishes = DB.get('wishes');
+  const rsvps = DB.get('rsvps');
+  const attending = rsvps.filter(r => r.attending).length;
+  const declined = rsvps.filter(r => !r.attending).length;
+  document.getElementById('statAttend').textContent = attending;
+  document.getElementById('statDecline').textContent = declined;
+  document.getElementById('statWishes').textContent = wishes.length;
+  const list = document.getElementById('wishList');
+  if (!wishes.length) { list.innerHTML = '<div class="admin-empty">ยังไม่มีการ์ดอวยพรค่ะ ✨</div>'; return; }
+  list.innerHTML = wishes.slice().reverse().map(w => `
+    <div class="wish-card-admin">
+      <div class="wish-card-from">การ์ดอวยพร</div>
+      <div class="wish-card-name">💌 ${w.name}</div>
+      <div class="wish-card-msg">"${w.message}"</div>
+      <div class="wish-card-time">${new Date(w.ts).toLocaleString('th-TH')}</div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>

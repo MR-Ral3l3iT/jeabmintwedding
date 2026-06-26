@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// รายชื่อแขก — สร้างจากหลังบ้าน (เชิญ) หรือตอบ RSVP โดยตรง
+model Guest {
+  id          String    @id @default(cuid())
+  displayName String?   @db.VarChar(150)
+  name        String?   @db.VarChar(100)
+  attending   Boolean?
+  attendeeCount Int?
+  inviteToken String?   @unique @db.VarChar(32)
+  rsvpAt      DateTime?
+  lineUserId  String?   @db.VarChar(100)
+  createdAt   DateTime  @default(now())
+
+  wish Wish?
+
+  @@index([attending])
+  @@index([createdAt])
+  @@index([displayName])
+  @@map("guests")
+}
+
+/// คำอวยพรจากแขก
+model Wish {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  guestId   String   @unique
+  createdAt DateTime @default(now())
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("wishes")
+}
+
+/// Admin สำหรับเจ้าบ่าว-เจ้าสาว
+model Admin {
+  id           String @id @default(cuid())
+  email        String @unique @db.VarChar(255)
+  passwordHash String
+
+  @@map("admins")
+}
+
+/// ข้อมูลงานแต่ง (แถวเดียว id = default)
+model WeddingSettings {
+  id                String   @id @default("default")
+  groomName         String   @db.VarChar(150)
+  groomNickname     String   @db.VarChar(50)
+  brideName         String   @db.VarChar(150)
+  brideNickname     String   @db.VarChar(50)
+  weddingDate       DateTime
+  venue             String   @db.VarChar(200)
+  city              String   @db.VarChar(200)
+  lineOaId          String   @db.VarChar(100)
+  lineOaUrl         String   @db.VarChar(500)
+  rsvpContactPhone  String   @db.VarChar(30)
+  mapsUrl           String   @db.VarChar(500)
+  rsvpDeadline      DateTime
+  promptpay         String?  @db.VarChar(30)
+  promptpayName     String?  @db.VarChar(150)
+  bankName          String?  @db.VarChar(100)
+  bankAccountNumber String?  @db.VarChar(50)
+  bankAccountName   String?  @db.VarChar(150)
+  paymentQrUrl      String?  @db.VarChar(500)
+  timeline          Json     @default("[]")
+  updatedAt         DateTime @updatedAt
+
+  @@map("wedding_settings")
+}

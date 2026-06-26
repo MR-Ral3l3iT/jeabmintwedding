@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.local
+.env.production
+.env.*.local
+dist/
+.next/
+.turbo/
+*.tsbuildinfo
+.DS_Store
+
+# Uploaded payment QR (admin)
+apps/web/public/uploads/*
+!apps/web/public/uploads/.gitkeep
+
+# Prisma generated
+packages/prisma/generated/

@@ -1,0 +1,42 @@
+version: '3.8'
+
+# Optional: run API + Web in containers while using local PostgreSQL (Postgres.app).
+# For day-to-day dev, prefer: npm run dev:api && npm run dev:web
+
+services:
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wedding_api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://wedding:wedding@host.docker.internal:5432/wedding
+      APP_PORT: 3001
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./packages/prisma:/app/prisma-pkg
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: npm run start:dev
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: builder
+    container_name: wedding_web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web/src:/app/src
+    depends_on:
+      - api
+    command: npm run dev

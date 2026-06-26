@@ -7,8 +7,8 @@ version: '3.8'
 services:
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
       target: builder
     container_name: wedding_api_dev
     environment:
@@ -20,11 +20,11 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./apps/api/src:/app/src
-      - ./packages/prisma:/app/prisma-pkg
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/prisma:/app/packages/prisma
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    command: npm run start:dev
+    command: npm run start:dev --workspace=apps/api
 
   web:
     build:

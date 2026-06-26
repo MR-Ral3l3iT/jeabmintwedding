@@ -1,6 +1,7 @@
 version: '3.8'
 
-# Optional: run API + Web in containers while using local PostgreSQL (Postgres.app).
+# Development compose for local development.
+# Production deploy should use a separate file named docker-compose.prod.yml on the server.
 # For day-to-day dev, prefer: npm run dev:api && npm run dev:web
 
 services:
@@ -9,7 +10,7 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
       target: builder
-    container_name: wedding_api
+    container_name: wedding_api_dev
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://wedding:wedding@host.docker.internal:5432/wedding
@@ -30,7 +31,7 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       target: builder
-    container_name: wedding_web
+    container_name: wedding_web_dev
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
     ports:

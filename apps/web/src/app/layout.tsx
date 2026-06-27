@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ScrollReveal } from '@/components/invite/ScrollReveal';
 import { ASSETS } from '@/lib/constants';
+import { fontVariables } from '@/lib/fonts';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export default function RootLayout({
         <link rel="preload" href={ASSETS.envelopeTexture} as="image" />
         <link rel="preload" href={ASSETS.cardTexture} as="image" />
       </head>
-      <body>
+      <body className={fontVariables}>
         <ScrollReveal />
         {children}
       </body>

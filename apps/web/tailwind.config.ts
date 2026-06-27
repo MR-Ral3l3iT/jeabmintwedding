@@ -16,10 +16,10 @@ const config: Config = {
         'text-light': '#6B6B6B',
       },
       fontFamily: {
-        display: ['"Dancing Script"', 'Prompt', 'cursive'],
-        serif: ['"Cormorant Garamond"', 'Prompt', 'sans-serif'],
-        thai: ['Prompt', 'sans-serif'],
-        sans: ['Prompt', 'sans-serif'],
+        display: ['var(--font-dancing)', 'var(--font-prompt)', 'cursive'],
+        serif: ['var(--font-cormorant)', 'var(--font-prompt)', 'sans-serif'],
+        thai: ['var(--font-prompt)', 'sans-serif'],
+        sans: ['var(--font-prompt)', 'sans-serif'],
       },
       animation: {
         'fade-up': 'fadeUp 0.8s ease forwards',

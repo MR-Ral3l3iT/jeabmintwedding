@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=Dancing+Script:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap');
-
 :root {
   --sage: #6B7C5E;
   --teal-dark: #1E3A3A;
@@ -19,7 +17,7 @@ html {
 }
 
 body {
-  font-family: 'Prompt', sans-serif;
+  font-family: var(--font-prompt), sans-serif;
   font-weight: 300;
   line-height: 1.75;
   letter-spacing: 0.02em;
@@ -35,17 +33,17 @@ body {
 
 @layer utilities {
   .font-display {
-    font-family: 'Dancing Script', 'Prompt', cursive;
+    font-family: var(--font-dancing), var(--font-prompt), cursive;
     font-weight: 500;
     letter-spacing: 0.01em;
   }
   .font-serif-cg {
-    font-family: 'Cormorant Garamond', 'Prompt', sans-serif;
+    font-family: var(--font-cormorant), var(--font-prompt), sans-serif;
     font-weight: 300;
     letter-spacing: 0.01em;
   }
   .font-serif-cg-bold {
-    font-family: 'Cormorant Garamond', 'Prompt', sans-serif;
+    font-family: var(--font-cormorant), var(--font-prompt), sans-serif;
     font-weight: 700;
     letter-spacing: 0.01em;
   }

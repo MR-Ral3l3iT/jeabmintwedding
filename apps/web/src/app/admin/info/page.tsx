@@ -1,5 +1,6 @@
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { EventInfoEditor } from '@/components/admin/EventInfoEditor';
+import { GuestCategoryManager } from '@/components/admin/GuestCategoryManager';
 import { Clock } from 'lucide-react';
 
 export default function AdminInfoPage() {
@@ -17,12 +18,15 @@ export default function AdminInfoPage() {
                 ข้อมูลงาน
               </h2>
               <p className="mt-1.5 text-[0.88rem] leading-relaxed text-[#8a8a8a]">
-                แก้ไขรายละเอียดงาน บัญชีรับเงิน และ QR Code — บันทึกลงฐานข้อมูลและแสดงบนการ์ดเชิญ
+                แก้ไขรายละเอียดงาน ประเภทแขก บัญชีรับเงิน และ QR Code — บันทึกลงฐานข้อมูลและแสดงบนการ์ดเชิญ
               </p>
             </div>
           </div>
         </header>
-        <EventInfoEditor />
+        <div className="space-y-4">
+          <GuestCategoryManager />
+          <EventInfoEditor />
+        </div>
       </main>
     </>
   );

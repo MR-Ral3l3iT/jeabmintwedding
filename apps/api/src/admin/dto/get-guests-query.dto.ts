@@ -45,13 +45,10 @@ export class GetGuestsQueryDto {
   @IsIn(['pending', 'attending', 'declined', 'responded'])
   status?: 'pending' | 'attending' | 'declined' | 'responded';
 
-  @ApiPropertyOptional({
-    enum: ['GROOM_FRIEND', 'BRIDE_FRIEND', 'GROOM_ELDER', 'BRIDE_ELDER', 'OTHER'],
-    description: 'filter ตามประเภทแขก',
-  })
+  @ApiPropertyOptional({ description: 'filter ตามประเภทแขก (category id)' })
   @IsOptional()
-  @IsIn(['GROOM_FRIEND', 'BRIDE_FRIEND', 'GROOM_ELDER', 'BRIDE_ELDER', 'OTHER'])
-  category?: 'GROOM_FRIEND' | 'BRIDE_FRIEND' | 'GROOM_ELDER' | 'BRIDE_ELDER' | 'OTHER';
+  @IsString()
+  categoryId?: string;
 
   @ApiPropertyOptional({ enum: ['created', 'rsvp'], default: 'created' })
   @IsOptional()

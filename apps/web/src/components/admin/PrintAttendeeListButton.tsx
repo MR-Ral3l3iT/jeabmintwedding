@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, Printer } from 'lucide-react';
-import { getAdminGuests } from '@/lib/api';
+import { getAdminGuests, getAdminGuestCategories } from '@/lib/api';
 import {
   closePrintWindow,
   openPrintWindow,
@@ -30,11 +30,14 @@ export function PrintAttendeeListButton() {
     setLoading(true);
     setError('');
     try {
-      const res = await getAdminGuests(getToken(), {
-        status: 'attending',
-        limit: 200,
-        sort: 'rsvp',
-      });
+      const [res, categories] = await Promise.all([
+        getAdminGuests(getToken(), {
+          status: 'attending',
+          limit: 200,
+          sort: 'rsvp',
+        }),
+        getAdminGuestCategories(getToken()),
+      ]);
 
       if (res.data.length === 0) {
         closePrintWindow(printWindow);
@@ -42,7 +45,7 @@ export function PrintAttendeeListButton() {
         return;
       }
 
-      renderPrintAttendeeList(printWindow, res.data);
+      renderPrintAttendeeList(printWindow, res.data, categories);
     } catch (err) {
       closePrintWindow(printWindow);
       setError(err instanceof Error ? err.message : 'ไม่สามารถโหลดรายชื่อได้');

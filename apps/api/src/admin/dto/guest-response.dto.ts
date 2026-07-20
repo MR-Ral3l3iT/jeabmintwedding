@@ -10,17 +10,14 @@ export class GuestResponseDto {
   @ApiPropertyOptional()
   name?: string;
 
-  @ApiPropertyOptional()
-  attending?: boolean;
-
   @ApiPropertyOptional({ description: 'จำนวนผู้มางาน' })
   attendeeCount?: number;
 
-  @ApiPropertyOptional({
-    enum: ['GROOM_FRIEND', 'BRIDE_FRIEND', 'GROOM_ELDER', 'BRIDE_ELDER', 'OTHER'],
-    description: 'ประเภทแขก',
-  })
-  category?: string;
+  @ApiPropertyOptional({ description: 'รหัสประเภทแขก' })
+  categoryId?: string;
+
+  @ApiPropertyOptional({ description: 'ชื่อประเภทแขก' })
+  categoryName?: string;
 
   @ApiProperty()
   createdAt: Date;
@@ -33,6 +30,9 @@ export class GuestResponseDto {
 
   @ApiPropertyOptional()
   wishMessage?: string;
+
+  @ApiPropertyOptional()
+  attending?: boolean;
 }
 
 export class GuestListResponseDto {

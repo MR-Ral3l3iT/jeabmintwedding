@@ -13,6 +13,11 @@ import { GuestListResponseDto, GuestResponseDto } from './dto/guest-response.dto
 import { WishResponseDto } from './dto/wish-response.dto';
 import { StatsResponseDto } from './dto/stats-response.dto';
 import { GetWishesQueryDto } from './dto/get-wishes-query.dto';
+import {
+  CreateGuestCategoryDto,
+  GuestCategoryResponseDto,
+  UpdateGuestCategoryDto,
+} from './dto/guest-category.dto';
 
 function generateInviteToken(): string {
   return randomBytes(16).toString('hex');
@@ -26,19 +31,21 @@ export class AdminService {
     id: string;
     displayName: string | null;
     name: string | null;
-    category: string | null;
+    categoryId: string | null;
     attending: boolean | null;
     attendeeCount: number | null;
     createdAt: Date;
     rsvpAt: Date | null;
     inviteToken: string | null;
+    category?: { name: string } | null;
     wish?: { message: string } | null;
   }): GuestResponseDto {
     return {
       id: g.id,
       displayName: g.displayName ?? undefined,
       name: g.name ?? undefined,
-      category: g.category ?? undefined,
+      categoryId: g.categoryId ?? undefined,
+      categoryName: g.category?.name,
       attending: g.attending ?? undefined,
       attendeeCount: g.attendeeCount ?? undefined,
       createdAt: g.createdAt,
@@ -52,14 +59,102 @@ export class AdminService {
     id: true,
     displayName: true,
     name: true,
-    category: true,
+    categoryId: true,
     attending: true,
     attendeeCount: true,
     createdAt: true,
     rsvpAt: true,
     inviteToken: true,
+    category: { select: { name: true } },
     wish: { select: { message: true } },
   } as const;
+
+  private toCategoryDto(row: {
+    id: string;
+    name: string;
+    sortOrder: number;
+    createdAt: Date;
+  }): GuestCategoryResponseDto {
+    return {
+      id: row.id,
+      name: row.name,
+      sortOrder: row.sortOrder,
+      createdAt: row.createdAt,
+    };
+  }
+
+  async getGuestCategories(): Promise<GuestCategoryResponseDto[]> {
+    const rows = await this.prisma.guestCategory.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    });
+    return rows.map((row) => this.toCategoryDto(row));
+  }
+
+  async createGuestCategory(dto: CreateGuestCategoryDto): Promise<GuestCategoryResponseDto> {
+    const name = dto.name.trim();
+    if (!name) {
+      throw new BadRequestException('กรุณากรอกชื่อประเภทแขก');
+    }
+
+    const maxOrder = await this.prisma.guestCategory.aggregate({
+      _max: { sortOrder: true },
+    });
+
+    const row = await this.prisma.guestCategory.create({
+      data: {
+        name,
+        sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
+      },
+    });
+
+    return this.toCategoryDto(row);
+  }
+
+  async updateGuestCategory(
+    id: string,
+    dto: UpdateGuestCategoryDto,
+  ): Promise<GuestCategoryResponseDto> {
+    const existing = await this.prisma.guestCategory.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('ไม่พบประเภทแขก');
+    }
+
+    const row = await this.prisma.guestCategory.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name.trim() }),
+        ...(dto.sortOrder !== undefined && { sortOrder: dto.sortOrder }),
+      },
+    });
+
+    return this.toCategoryDto(row);
+  }
+
+  async deleteGuestCategory(id: string): Promise<void> {
+    const existing = await this.prisma.guestCategory.findUnique({
+      where: { id },
+      include: { _count: { select: { guests: true } } },
+    });
+    if (!existing) {
+      throw new NotFoundException('ไม่พบประเภทแขก');
+    }
+    if (existing._count.guests > 0) {
+      throw new BadRequestException(
+        `ไม่สามารถลบได้ เพราะมีแขก ${existing._count.guests} รายการใช้ประเภทนี้อยู่`,
+      );
+    }
+    await this.prisma.guestCategory.delete({ where: { id } });
+  }
+
+  private async assertCategoryExists(categoryId: string): Promise<void> {
+    const found = await this.prisma.guestCategory.findUnique({
+      where: { id: categoryId },
+      select: { id: true },
+    });
+    if (!found) {
+      throw new BadRequestException('ไม่พบประเภทแขกที่เลือก');
+    }
+  }
 
   async getGuests(query: GetGuestsQueryDto): Promise<GuestListResponseDto> {
     const {
@@ -68,7 +163,7 @@ export class AdminService {
       search,
       attending,
       status,
-      category,
+      categoryId,
       sort = 'created',
     } = query;
     const skip = (page - 1) * limit;
@@ -85,7 +180,7 @@ export class AdminService {
       ...(status === 'attending' && { rsvpAt: { not: null }, attending: true }),
       ...(status === 'declined' && { rsvpAt: { not: null }, attending: false }),
       ...(status === 'responded' && { rsvpAt: { not: null } }),
-      ...(category && { category }),
+      ...(categoryId && { categoryId }),
     };
 
     const [guests, total] = await this.prisma.$transaction([
@@ -112,6 +207,8 @@ export class AdminService {
   }
 
   async createGuest(dto: CreateGuestDto): Promise<GuestResponseDto> {
+    await this.assertCategoryExists(dto.categoryId);
+
     let inviteToken = generateInviteToken();
     let attempts = 0;
 
@@ -120,7 +217,7 @@ export class AdminService {
         const guest = await this.prisma.guest.create({
           data: {
             displayName: dto.displayName.trim(),
-            category: dto.category,
+            categoryId: dto.categoryId,
             inviteToken,
           },
           select: this.guestSelect,
@@ -149,11 +246,15 @@ export class AdminService {
       throw new NotFoundException('ไม่พบแขก');
     }
 
+    if (dto.categoryId !== undefined) {
+      await this.assertCategoryExists(dto.categoryId);
+    }
+
     const guest = await this.prisma.guest.update({
       where: { id },
       data: {
         ...(dto.displayName !== undefined && { displayName: dto.displayName.trim() }),
-        ...(dto.category !== undefined && { category: dto.category }),
+        ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       },
       select: this.guestSelect,
     });

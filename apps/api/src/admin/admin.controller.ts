@@ -36,6 +36,11 @@ import {
   WeddingSettingsResponseDto,
 } from '@/settings/dto/wedding-settings.dto';
 import { GetWishesQueryDto } from './dto/get-wishes-query.dto';
+import {
+  CreateGuestCategoryDto,
+  GuestCategoryResponseDto,
+  UpdateGuestCategoryDto,
+} from './dto/guest-category.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -46,6 +51,40 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly settingsService: SettingsService,
   ) {}
+
+  @Get('guest-categories')
+  @ApiOperation({ summary: 'รายการประเภทแขก (Admin)' })
+  @ApiResponse({ status: 200, type: [GuestCategoryResponseDto] })
+  async getGuestCategories(): Promise<GuestCategoryResponseDto[]> {
+    return this.adminService.getGuestCategories();
+  }
+
+  @Post('guest-categories')
+  @ApiOperation({ summary: 'เพิ่มประเภทแขก (Admin)' })
+  @ApiResponse({ status: 201, type: GuestCategoryResponseDto })
+  async createGuestCategory(
+    @Body() dto: CreateGuestCategoryDto,
+  ): Promise<GuestCategoryResponseDto> {
+    return this.adminService.createGuestCategory(dto);
+  }
+
+  @Patch('guest-categories/:id')
+  @ApiOperation({ summary: 'แก้ไขประเภทแขก (Admin)' })
+  @ApiResponse({ status: 200, type: GuestCategoryResponseDto })
+  async updateGuestCategory(
+    @Param('id') id: string,
+    @Body() dto: UpdateGuestCategoryDto,
+  ): Promise<GuestCategoryResponseDto> {
+    return this.adminService.updateGuestCategory(id, dto);
+  }
+
+  @Delete('guest-categories/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'ลบประเภทแขก (Admin)' })
+  @ApiResponse({ status: 204 })
+  async deleteGuestCategory(@Param('id') id: string): Promise<void> {
+    return this.adminService.deleteGuestCategory(id);
+  }
 
   @Get('guests')
   @ApiOperation({ summary: 'รายชื่อแขกทั้งหมด (Admin)' })

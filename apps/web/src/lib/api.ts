@@ -1,5 +1,4 @@
 import { API_URL } from './constants';
-import type { GuestCategory } from '@/lib/guestCategory';
 import type {
   RsvpPayload,
   RsvpResponse,
@@ -7,6 +6,7 @@ import type {
   LoginResponse,
   GuestListResponse,
   Guest,
+  GuestCategory,
   InviteInfo,
   Wish,
   Stats,
@@ -125,7 +125,7 @@ export async function getAdminGuests(
     search?: string;
     attending?: boolean;
     status?: 'pending' | 'attending' | 'declined' | 'responded';
-    category?: GuestCategory;
+    categoryId?: string;
     sort?: 'created' | 'rsvp';
   },
 ): Promise<GuestListResponse> {
@@ -135,7 +135,7 @@ export async function getAdminGuests(
   if (params.search) qs.set('search', params.search);
   if (params.attending !== undefined) qs.set('attending', String(params.attending));
   if (params.status) qs.set('status', params.status);
-  if (params.category) qs.set('category', params.category);
+  if (params.categoryId) qs.set('categoryId', params.categoryId);
   if (params.sort) qs.set('sort', params.sort);
 
   return request<GuestListResponse>(`/admin/guests?${qs.toString()}`, {
@@ -145,7 +145,7 @@ export async function getAdminGuests(
 
 export async function createAdminGuest(
   token: string,
-  payload: { displayName: string; category: GuestCategory },
+  payload: { displayName: string; categoryId: string },
 ): Promise<Guest> {
   return request<Guest>('/admin/guests', {
     method: 'POST',
@@ -157,15 +157,51 @@ export async function createAdminGuest(
 export async function updateAdminGuest(
   token: string,
   id: string,
-  payload: { displayName?: string; category?: GuestCategory },
+  payload: { displayName?: string; categoryId?: string },
 ): Promise<Guest> {
   return request<Guest>(`/admin/guests/${id}`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       ...(payload.displayName !== undefined && { displayName: payload.displayName.trim() }),
-      ...(payload.category !== undefined && { category: payload.category }),
+      ...(payload.categoryId !== undefined && { categoryId: payload.categoryId }),
     }),
+  });
+}
+
+export async function getAdminGuestCategories(token: string): Promise<GuestCategory[]> {
+  return request<GuestCategory[]>('/admin/guest-categories', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createAdminGuestCategory(
+  token: string,
+  name: string,
+): Promise<GuestCategory> {
+  return request<GuestCategory>('/admin/guest-categories', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function updateAdminGuestCategory(
+  token: string,
+  id: string,
+  payload: { name?: string; sortOrder?: number },
+): Promise<GuestCategory> {
+  return request<GuestCategory>(`/admin/guest-categories/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminGuestCategory(token: string, id: string): Promise<void> {
+  return request<void>(`/admin/guest-categories/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
   });
 }
 

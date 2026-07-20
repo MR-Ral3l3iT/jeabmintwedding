@@ -1,6 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { GuestCategoryDto } from './create-guest.dto';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateGuestDto {
   @ApiPropertyOptional({
@@ -15,10 +14,10 @@ export class UpdateGuestDto {
   displayName?: string;
 
   @ApiPropertyOptional({
-    enum: GuestCategoryDto,
-    description: 'ประเภทแขก',
+    description: 'รหัสประเภทแขก',
   })
   @IsOptional()
-  @IsEnum(GuestCategoryDto, { message: 'กรุณาเลือกประเภทแขก' })
-  category?: GuestCategoryDto;
+  @IsString({ message: 'กรุณาเลือกประเภทแขก' })
+  @IsNotEmpty({ message: 'กรุณาเลือกประเภทแขก' })
+  categoryId?: string;
 }

@@ -1,13 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString, MaxLength } from 'class-validator';
-
-export enum GuestCategoryDto {
-  GROOM_FRIEND = 'GROOM_FRIEND',
-  BRIDE_FRIEND = 'BRIDE_FRIEND',
-  GROOM_ELDER = 'GROOM_ELDER',
-  BRIDE_ELDER = 'BRIDE_ELDER',
-  OTHER = 'OTHER',
-}
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CreateGuestDto {
   @ApiProperty({
@@ -21,10 +13,10 @@ export class CreateGuestDto {
   displayName: string;
 
   @ApiProperty({
-    enum: GuestCategoryDto,
-    description: 'ประเภทแขก',
-    example: GuestCategoryDto.GROOM_FRIEND,
+    description: 'รหัสประเภทแขก',
+    example: 'GROOM_FRIEND',
   })
-  @IsEnum(GuestCategoryDto, { message: 'กรุณาเลือกประเภทแขก' })
-  category: GuestCategoryDto;
+  @IsString({ message: 'กรุณาเลือกประเภทแขก' })
+  @IsNotEmpty({ message: 'กรุณาเลือกประเภทแขก' })
+  categoryId: string;
 }

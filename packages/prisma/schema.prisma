@@ -8,12 +8,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum GuestCategory {
-  GROOM_FRIEND
-  BRIDE_FRIEND
-  GROOM_ELDER
-  BRIDE_ELDER
-  OTHER
+/// ประเภทแขกที่แอดมินกำหนดเองได้
+model GuestCategory {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(100)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  guests Guest[]
+
+  @@index([sortOrder])
+  @@map("guest_categories")
 }
 
 /// รายชื่อแขก — สร้างจากหลังบ้าน (เชิญ) หรือตอบ RSVP โดยตรง
@@ -21,7 +26,7 @@ model Guest {
   id            String         @id @default(cuid())
   displayName   String?        @db.VarChar(150)
   name          String?        @db.VarChar(100)
-  category      GuestCategory?
+  categoryId    String?        @map("category_id")
   attending     Boolean?
   attendeeCount Int?
   inviteToken   String?        @unique @db.VarChar(32)
@@ -29,10 +34,11 @@ model Guest {
   lineUserId    String?        @db.VarChar(100)
   createdAt     DateTime       @default(now())
 
-  wish Wish?
+  category GuestCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  wish     Wish?
 
   @@index([attending])
-  @@index([category])
+  @@index([categoryId])
   @@index([createdAt])
   @@index([displayName])
   @@map("guests")

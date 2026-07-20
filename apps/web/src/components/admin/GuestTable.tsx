@@ -19,20 +19,18 @@ import {
 } from 'lucide-react';
 import {
   getAdminGuests,
+  getAdminGuestCategories,
   updateAdminGuest,
   deleteAdminGuest,
 } from '@/lib/api';
 import { getInviteUrl } from '@/lib/constants';
-import {
-  GUEST_CATEGORIES,
-  guestCategoryLabel,
-  type GuestCategory,
-} from '@/lib/guestCategory';
+import { guestCategoryLabel } from '@/lib/guestCategory';
 import { formatThaiDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AddGuestForm } from '@/components/admin/AddGuestForm';
 import { AdminFloralDecor } from '@/components/admin/AdminFloralDecor';
-import type { Guest } from '@/types';
+import { AdminSelect } from '@/components/admin/AdminSelect';
+import type { Guest, GuestCategory } from '@/types';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -62,7 +60,7 @@ function guestStatus(g: Guest): { label: string; className: string; icon: typeof
 }
 
 type GuestFilter = 'all' | 'attending' | 'declined' | 'pending';
-type CategoryFilter = 'all' | GuestCategory;
+type CategoryFilter = 'all' | string;
 
 const FILTER_OPTIONS: {
   value: GuestFilter;
@@ -73,11 +71,6 @@ const FILTER_OPTIONS: {
   { value: 'pending', label: 'รอตอบรับ', icon: Clock },
   { value: 'attending', label: 'เข้าร่วม', icon: CheckCircle2 },
   { value: 'declined', label: 'ไม่สะดวก', icon: UserX },
-];
-
-const CATEGORY_FILTER_OPTIONS: { value: CategoryFilter; label: string }[] = [
-  { value: 'all', label: 'ทุกประเภทแขก' },
-  ...GUEST_CATEGORIES.map((c) => ({ value: c.value, label: c.label })),
 ];
 
 const PAGE_SIZE = 10;
@@ -214,74 +207,23 @@ function GuestFilterDropdown({
 function CategoryFilterDropdown({
   value,
   onChange,
+  categories,
 }: {
   value: CategoryFilter;
   onChange: (value: CategoryFilter) => void;
+  categories: GuestCategory[];
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selected =
-    CATEGORY_FILTER_OPTIONS.find((o) => o.value === value) ?? CATEGORY_FILTER_OPTIONS[0];
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
-    <div ref={ref} className="relative w-full sm:w-[14.5rem]">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-3.5 py-3 text-sm text-[#2c2c2c] transition-colors hover:border-[#c5cfc5]"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <Tags className="h-4 w-4 shrink-0 text-[#6b7c5e]" aria-hidden="true" />
-          <span className="truncate">{selected.label}</span>
-        </span>
-        <ChevronDown
-          className={cn('h-4 w-4 shrink-0 text-[#8a8a8a] transition-transform', open && 'rotate-180')}
-          aria-hidden="true"
-        />
-      </button>
-
-      {open && (
-        <ul
-          role="listbox"
-          className="absolute right-0 z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-[#e5e9e0] bg-white py-1 shadow-[0_8px_28px_rgba(30,58,58,0.12)]"
-        >
-          {CATEGORY_FILTER_OPTIONS.map((option) => {
-            const isActive = option.value === value;
-            return (
-              <li key={option.value} role="option" aria-selected={isActive}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center px-3.5 py-2.5 text-left text-sm transition-colors',
-                    isActive
-                      ? 'bg-[#eef2ea] text-[#1a3228] font-medium'
-                      : 'text-[#2c2c2c] hover:bg-[#faf8f4]',
-                  )}
-                >
-                  {option.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+    <AdminSelect
+      value={value}
+      onChange={(v) => onChange(v as CategoryFilter)}
+      options={[
+        { value: 'all', label: 'ทุกประเภทแขก' },
+        ...categories.map((c) => ({ value: c.id, label: c.name })),
+      ]}
+      leadingIcon={Tags}
+      className="sm:w-[14.5rem]"
+    />
   );
 }
 
@@ -293,12 +235,13 @@ export function GuestTable() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<GuestFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [categories, setCategories] = useState<GuestCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editCategory, setEditCategory] = useState<GuestCategory | ''>('');
+  const [editCategoryId, setEditCategoryId] = useState('');
   const [actionError, setActionError] = useState('');
   const [editError, setEditError] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
@@ -307,17 +250,21 @@ export function GuestTable() {
     setLoading(true);
     setError('');
     try {
-      const res = await getAdminGuests(getToken(), {
-        page,
-        limit: PAGE_SIZE,
-        search: search || undefined,
-        status: filter === 'all' ? undefined : filter,
-        category: categoryFilter === 'all' ? undefined : categoryFilter,
-      });
+      const [res, categoryRows] = await Promise.all([
+        getAdminGuests(getToken(), {
+          page,
+          limit: PAGE_SIZE,
+          search: search || undefined,
+          status: filter === 'all' ? undefined : filter,
+          categoryId: categoryFilter === 'all' ? undefined : categoryFilter,
+        }),
+        getAdminGuestCategories(getToken()),
+      ]);
 
       setGuests(res.data);
       setTotal(res.total);
       setTotalPages(res.totalPages);
+      setCategories(categoryRows);
     } catch {
       setError('ไม่สามารถโหลดข้อมูลได้');
     } finally {
@@ -332,7 +279,7 @@ export function GuestTable() {
   function resetEditState() {
     setEditingId(null);
     setEditName('');
-    setEditCategory('');
+    setEditCategoryId('');
     setEditError('');
   }
 
@@ -383,12 +330,12 @@ export function GuestTable() {
   function startEdit(guest: Guest) {
     setEditingId(guest.id);
     setEditName(guest.displayName ?? guest.name ?? '');
-    setEditCategory(guest.category ?? '');
+    setEditCategoryId(guest.categoryId ?? '');
     setActionError('');
     setEditError('');
   }
 
-  async function saveEdit(id: string, name: string, category: GuestCategory | '') {
+  async function saveEdit(id: string, name: string, categoryId: string) {
     if (savingEdit) return;
 
     const trimmed = name.trim();
@@ -396,7 +343,7 @@ export function GuestTable() {
       setEditError('กรุณากรอกชื่อบนการ์ด');
       return;
     }
-    if (!category) {
+    if (!categoryId) {
       setEditError('กรุณาเลือกประเภทแขก');
       return;
     }
@@ -407,7 +354,7 @@ export function GuestTable() {
     try {
       await updateAdminGuest(getToken(), id, {
         displayName: trimmed,
-        category,
+        categoryId,
       });
       resetEditState();
       fetchGuests();
@@ -468,6 +415,7 @@ export function GuestTable() {
             <CategoryFilterDropdown
               value={categoryFilter}
               onChange={handleCategoryFilterChange}
+              categories={categories}
             />
             <GuestFilterDropdown value={filter} onChange={handleFilterChange} />
           </div>
@@ -532,12 +480,13 @@ export function GuestTable() {
                     <GuestRow
                       key={g.id}
                       guest={g}
+                      categories={categories}
                       copiedId={copiedId}
                       editingId={editingId}
                       editName={editName}
-                      editCategory={editCategory}
+                      editCategoryId={editCategoryId}
                       onEditName={setEditName}
-                      onEditCategory={setEditCategory}
+                      onEditCategoryId={setEditCategoryId}
                       onStartEdit={startEdit}
                       onSaveEdit={saveEdit}
                       onCancelEdit={cancelEdit}
@@ -556,12 +505,13 @@ export function GuestTable() {
               <GuestCard
                 key={g.id}
                 guest={g}
+                categories={categories}
                 copiedId={copiedId}
                 editingId={editingId}
                 editName={editName}
-                editCategory={editCategory}
+                editCategoryId={editCategoryId}
                 onEditName={setEditName}
-                onEditCategory={setEditCategory}
+                onEditCategoryId={setEditCategoryId}
                 onStartEdit={startEdit}
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEdit}
@@ -585,14 +535,15 @@ export function GuestTable() {
 
 interface GuestRowProps {
   guest: Guest;
+  categories: GuestCategory[];
   copiedId: string | null;
   editingId: string | null;
   editName: string;
-  editCategory: GuestCategory | '';
+  editCategoryId: string;
   onEditName: (name: string) => void;
-  onEditCategory: (category: GuestCategory | '') => void;
+  onEditCategoryId: (categoryId: string) => void;
   onStartEdit: (guest: Guest) => void;
-  onSaveEdit: (id: string, name: string, category: GuestCategory | '') => void;
+  onSaveEdit: (id: string, name: string, categoryId: string) => void;
   onCancelEdit: () => void;
   onCopyLink: (guest: Guest) => void;
   onDelete: (id: string) => void;
@@ -600,12 +551,13 @@ interface GuestRowProps {
 
 function GuestRow({
   guest: g,
+  categories,
   copiedId,
   editingId,
   editName,
-  editCategory,
+  editCategoryId,
   onEditName,
-  onEditCategory,
+  onEditCategoryId,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -630,7 +582,7 @@ function GuestRow({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  onSaveEdit(g.id, e.currentTarget.value, editCategory);
+                  onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
@@ -642,7 +594,7 @@ function GuestRow({
             />
             <button
               type="button"
-              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName, editCategory)}
+              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)}
               className="text-[#6b7c5e] hover:text-[#1a3228]"
               aria-label="บันทึก"
             >
@@ -663,20 +615,15 @@ function GuestRow({
       </td>
       <td className="px-5 py-4">
         {isEditing ? (
-          <select
-            value={editCategory}
-            onChange={(e) => onEditCategory(e.target.value as GuestCategory | '')}
-            className="w-full min-w-[10rem] rounded-lg border border-[#e5e9e0] bg-white px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
-          >
-            <option value="">เลือกประเภท</option>
-            {GUEST_CATEGORIES.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <AdminSelect
+            value={editCategoryId}
+            onChange={onEditCategoryId}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+            placeholder="เลือกประเภท"
+            className="min-w-[10rem]"
+          />
         ) : (
-          <CategoryBadge category={g.category} />
+          <CategoryBadge guest={g} />
         )}
       </td>
       <td className="px-5 py-4 text-center">
@@ -708,12 +655,13 @@ function GuestRow({
 
 function GuestCard({
   guest: g,
+  categories,
   copiedId,
   editingId,
   editName,
-  editCategory,
+  editCategoryId,
   onEditName,
-  onEditCategory,
+  onEditCategoryId,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -740,7 +688,7 @@ function GuestCard({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      onSaveEdit(g.id, e.currentTarget.value, editCategory);
+                      onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
                     }
                     if (e.key === 'Escape') {
                       e.preventDefault();
@@ -753,7 +701,7 @@ function GuestCard({
                 <button
                   type="button"
                   onClick={() =>
-                    onSaveEdit(g.id, inputRef.current?.value || editName, editCategory)
+                    onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)
                   }
                   aria-label="บันทึก"
                 >
@@ -763,23 +711,17 @@ function GuestCard({
                   <X className="h-4 w-4 text-[#8a8a8a]" />
                 </button>
               </div>
-              <select
-                value={editCategory}
-                onChange={(e) => onEditCategory(e.target.value as GuestCategory | '')}
-                className="w-full rounded-lg border border-[#e5e9e0] bg-white px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
-              >
-                <option value="">เลือกประเภท</option>
-                {GUEST_CATEGORIES.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <AdminSelect
+                value={editCategoryId}
+                onChange={onEditCategoryId}
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                placeholder="เลือกประเภท"
+              />
             </>
           ) : (
             <>
               <GuestNameCell guest={g} />
-              <CategoryBadge category={g.category} />
+              <CategoryBadge guest={g} />
             </>
           )}
         </div>
@@ -810,14 +752,15 @@ function GuestCard({
   );
 }
 
-function CategoryBadge({ category }: { category?: GuestCategory }) {
-  if (!category) {
+function CategoryBadge({ guest }: { guest: Guest }) {
+  const label = guestCategoryLabel(guest);
+  if (!guest.categoryId) {
     return <span className="text-xs text-[#8a8a8a]">ยังไม่ระบุ</span>;
   }
 
   return (
     <span className="inline-flex rounded-full bg-[#eef2ea] px-2.5 py-1 text-xs text-[#3d5c45]">
-      {guestCategoryLabel(category)}
+      {label}
     </span>
   );
 }

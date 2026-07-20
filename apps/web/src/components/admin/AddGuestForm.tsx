@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { createAdminGuest } from '@/lib/api';
-import { GUEST_CATEGORIES, type GuestCategory } from '@/lib/guestCategory';
+import { useEffect, useState } from 'react';
+import { Plus, Tags } from 'lucide-react';
+import { createAdminGuest, getAdminGuestCategories } from '@/lib/api';
+import { AdminSelect } from '@/components/admin/AdminSelect';
+import type { GuestCategory } from '@/types';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -16,17 +17,24 @@ interface AddGuestFormProps {
 
 export function AddGuestForm({ onCreated }: AddGuestFormProps) {
   const [displayName, setDisplayName] = useState('');
-  const [category, setCategory] = useState<GuestCategory | ''>('');
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState<GuestCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    getAdminGuestCategories(getToken())
+      .then(setCategories)
+      .catch(() => setError('ไม่สามารถโหลดประเภทแขกได้'));
+  }, []);
 
   async function handleSubmit() {
     if (!displayName.trim()) {
       setError('กรุณากรอกชื่อบนการ์ด');
       return;
     }
-    if (!category) {
+    if (!categoryId) {
       setError('กรุณาเลือกประเภทแขก');
       return;
     }
@@ -37,10 +45,10 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
     try {
       await createAdminGuest(getToken(), {
         displayName: displayName.trim(),
-        category,
+        categoryId,
       });
       setDisplayName('');
-      setCategory('');
+      setCategoryId('');
       setSuccess('สร้างลิงก์เชิญเรียบร้อยแล้ว');
       onCreated();
     } catch (err) {
@@ -82,35 +90,41 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
           disabled={loading}
         />
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value as GuestCategory | '');
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <AdminSelect
+            value={categoryId}
+            onChange={(value) => {
+              setCategoryId(value);
               setError('');
               setSuccess('');
             }}
-            disabled={loading}
-            className="w-full rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-4 py-3 text-sm text-[#2c2c2c] outline-none transition-colors focus:border-[#6b7c5e] disabled:opacity-50 sm:flex-1"
-          >
-            <option value="">เลือกประเภทแขก</option>
-            {GUEST_CATEGORIES.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+            placeholder="เลือกประเภทแขก"
+            leadingIcon={Tags}
+            disabled={loading || categories.length === 0}
+            className="sm:flex-1"
+          />
 
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || categories.length === 0}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6b7c5e] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a3228] disabled:opacity-50 sm:shrink-0"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             {loading ? 'กำลังสร้าง...' : 'สร้างลิงก์'}
           </button>
         </div>
+
+        {categories.length === 0 && (
+          <p className="text-xs text-[#8a8a8a]">
+            ยังไม่มีประเภทแขก — ไปเพิ่มที่หน้า{' '}
+            <a href="/admin/info" className="text-[#6b7c5e] underline">
+              ข้อมูลงาน
+            </a>{' '}
+            ก่อน
+          </p>
+        )}
       </div>
 
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}

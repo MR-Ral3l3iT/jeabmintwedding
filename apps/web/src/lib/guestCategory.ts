@@ -1,32 +1,68 @@
-export type GuestCategory =
-  | 'GROOM_FRIEND'
-  | 'BRIDE_FRIEND'
-  | 'GROOM_ELDER'
-  | 'BRIDE_ELDER'
-  | 'OTHER';
+import type { Guest, GuestCategory } from '@/types';
 
-export const GUEST_CATEGORIES: {
-  value: GuestCategory;
-  label: string;
-}[] = [
-  { value: 'GROOM_FRIEND', label: 'เพื่อนเจ้าบ่าว' },
-  { value: 'BRIDE_FRIEND', label: 'เพื่อนเจ้าสาว' },
-  { value: 'GROOM_ELDER', label: 'แขกผู้ใหญ่ฝั่งเจ้าบ่าว' },
-  { value: 'BRIDE_ELDER', label: 'แขกผู้ใหญ่ฝั่งเจ้าสาว' },
-  { value: 'OTHER', label: 'แขกกลุ่มอื่นๆ' },
-];
+export function guestCategoryLabel(
+  guestOrCategoryId: Guest | string | null | undefined,
+  categories: GuestCategory[] = [],
+): string {
+  if (!guestOrCategoryId) return 'ยังไม่ระบุ';
 
-/** ลำดับตอนปริ้นรายชื่อ */
-export const GUEST_CATEGORY_PRINT_ORDER: (GuestCategory | null)[] = [
-  'GROOM_ELDER',
-  'BRIDE_ELDER',
-  'GROOM_FRIEND',
-  'BRIDE_FRIEND',
-  'OTHER',
-  null,
-];
+  if (typeof guestOrCategoryId === 'string') {
+    return categories.find((c) => c.id === guestOrCategoryId)?.name ?? 'ยังไม่ระบุ';
+  }
 
-export function guestCategoryLabel(category?: GuestCategory | null): string {
-  if (!category) return 'ยังไม่ระบุ';
-  return GUEST_CATEGORIES.find((c) => c.value === category)?.label ?? 'ยังไม่ระบุ';
+  if (guestOrCategoryId.categoryName) return guestOrCategoryId.categoryName;
+  if (guestOrCategoryId.categoryId) {
+    return categories.find((c) => c.id === guestOrCategoryId.categoryId)?.name ?? 'ยังไม่ระบุ';
+  }
+  return 'ยังไม่ระบุ';
+}
+
+export function sortGuestsForPrint(
+  guests: Guest[],
+  categories: GuestCategory[],
+): { categoryId: string | null; categoryName: string; guests: Guest[] }[] {
+  const byId = new Map<string | null, Guest[]>();
+
+  for (const category of categories) {
+    byId.set(category.id, []);
+  }
+  byId.set(null, []);
+
+  for (const guest of guests) {
+    const key =
+      guest.categoryId && byId.has(guest.categoryId) ? guest.categoryId : null;
+    byId.get(key)!.push(guest);
+  }
+
+  const guestName = (g: Guest) => g.displayName ?? g.name ?? 'ไม่ระบุชื่อ';
+
+  const sections: {
+    categoryId: string | null;
+    categoryName: string;
+    guests: Guest[];
+  }[] = categories
+    .map((category) => {
+      const list = (byId.get(category.id) ?? []).sort((a, b) =>
+        guestName(a).localeCompare(guestName(b), 'th'),
+      );
+      return {
+        categoryId: category.id as string | null,
+        categoryName: category.name,
+        guests: list,
+      };
+    })
+    .filter((section) => section.guests.length > 0);
+
+  const unset = (byId.get(null) ?? []).sort((a, b) =>
+    guestName(a).localeCompare(guestName(b), 'th'),
+  );
+  if (unset.length > 0) {
+    sections.push({
+      categoryId: null,
+      categoryName: 'ยังไม่ระบุ',
+      guests: unset,
+    });
+  }
+
+  return sections;
 }

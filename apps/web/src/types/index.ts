@@ -1,3 +1,5 @@
+import type { GuestCategory } from '@/lib/guestCategory';
+
 export interface RsvpPayload {
   name: string;
   attending: boolean;
@@ -18,6 +20,7 @@ export interface Guest {
   id: string;
   displayName?: string;
   name?: string;
+  category?: GuestCategory;
   attending?: boolean;
   attendeeCount?: number;
   createdAt: string;

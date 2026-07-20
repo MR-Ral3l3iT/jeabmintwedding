@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  Tags,
 } from 'lucide-react';
 import {
   getAdminGuests,
@@ -22,6 +23,11 @@ import {
   deleteAdminGuest,
 } from '@/lib/api';
 import { getInviteUrl } from '@/lib/constants';
+import {
+  GUEST_CATEGORIES,
+  guestCategoryLabel,
+  type GuestCategory,
+} from '@/lib/guestCategory';
 import { formatThaiDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AddGuestForm } from '@/components/admin/AddGuestForm';
@@ -56,6 +62,7 @@ function guestStatus(g: Guest): { label: string; className: string; icon: typeof
 }
 
 type GuestFilter = 'all' | 'attending' | 'declined' | 'pending';
+type CategoryFilter = 'all' | GuestCategory;
 
 const FILTER_OPTIONS: {
   value: GuestFilter;
@@ -66,6 +73,11 @@ const FILTER_OPTIONS: {
   { value: 'pending', label: 'รอตอบรับ', icon: Clock },
   { value: 'attending', label: 'เข้าร่วม', icon: CheckCircle2 },
   { value: 'declined', label: 'ไม่สะดวก', icon: UserX },
+];
+
+const CATEGORY_FILTER_OPTIONS: { value: CategoryFilter; label: string }[] = [
+  { value: 'all', label: 'ทุกประเภทแขก' },
+  ...GUEST_CATEGORIES.map((c) => ({ value: c.value, label: c.label })),
 ];
 
 const PAGE_SIZE = 10;
@@ -199,6 +211,80 @@ function GuestFilterDropdown({
   );
 }
 
+function CategoryFilterDropdown({
+  value,
+  onChange,
+}: {
+  value: CategoryFilter;
+  onChange: (value: CategoryFilter) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected =
+    CATEGORY_FILTER_OPTIONS.find((o) => o.value === value) ?? CATEGORY_FILTER_OPTIONS[0];
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full sm:w-[14.5rem]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-3.5 py-3 text-sm text-[#2c2c2c] transition-colors hover:border-[#c5cfc5]"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <Tags className="h-4 w-4 shrink-0 text-[#6b7c5e]" aria-hidden="true" />
+          <span className="truncate">{selected.label}</span>
+        </span>
+        <ChevronDown
+          className={cn('h-4 w-4 shrink-0 text-[#8a8a8a] transition-transform', open && 'rotate-180')}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          className="absolute right-0 z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-[#e5e9e0] bg-white py-1 shadow-[0_8px_28px_rgba(30,58,58,0.12)]"
+        >
+          {CATEGORY_FILTER_OPTIONS.map((option) => {
+            const isActive = option.value === value;
+            return (
+              <li key={option.value} role="option" aria-selected={isActive}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    'flex w-full items-center px-3.5 py-2.5 text-left text-sm transition-colors',
+                    isActive
+                      ? 'bg-[#eef2ea] text-[#1a3228] font-medium'
+                      : 'text-[#2c2c2c] hover:bg-[#faf8f4]',
+                  )}
+                >
+                  {option.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function GuestTable() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [total, setTotal] = useState(0);
@@ -206,11 +292,13 @@ export function GuestTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<GuestFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState<GuestCategory | ''>('');
   const [actionError, setActionError] = useState('');
   const [editError, setEditError] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
@@ -224,6 +312,7 @@ export function GuestTable() {
         limit: PAGE_SIZE,
         search: search || undefined,
         status: filter === 'all' ? undefined : filter,
+        category: categoryFilter === 'all' ? undefined : categoryFilter,
       });
 
       setGuests(res.data);
@@ -234,7 +323,7 @@ export function GuestTable() {
     } finally {
       setLoading(false);
     }
-  }, [search, filter, page]);
+  }, [search, filter, categoryFilter, page]);
 
   useEffect(() => {
     fetchGuests();
@@ -243,6 +332,7 @@ export function GuestTable() {
   function resetEditState() {
     setEditingId(null);
     setEditName('');
+    setEditCategory('');
     setEditError('');
   }
 
@@ -254,6 +344,12 @@ export function GuestTable() {
 
   function handleFilterChange(value: GuestFilter) {
     setFilter(value);
+    setPage(1);
+    resetEditState();
+  }
+
+  function handleCategoryFilterChange(value: CategoryFilter) {
+    setCategoryFilter(value);
     setPage(1);
     resetEditState();
   }
@@ -287,11 +383,12 @@ export function GuestTable() {
   function startEdit(guest: Guest) {
     setEditingId(guest.id);
     setEditName(guest.displayName ?? guest.name ?? '');
+    setEditCategory(guest.category ?? '');
     setActionError('');
     setEditError('');
   }
 
-  async function saveEdit(id: string, name: string) {
+  async function saveEdit(id: string, name: string, category: GuestCategory | '') {
     if (savingEdit) return;
 
     const trimmed = name.trim();
@@ -299,14 +396,20 @@ export function GuestTable() {
       setEditError('กรุณากรอกชื่อบนการ์ด');
       return;
     }
+    if (!category) {
+      setEditError('กรุณาเลือกประเภทแขก');
+      return;
+    }
 
     setEditError('');
     setActionError('');
     setSavingEdit(true);
     try {
-      await updateAdminGuest(getToken(), id, trimmed);
-      setEditingId(null);
-      setEditName('');
+      await updateAdminGuest(getToken(), id, {
+        displayName: trimmed,
+        category,
+      });
+      resetEditState();
       fetchGuests();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'แก้ไขไม่สำเร็จ';
@@ -322,9 +425,7 @@ export function GuestTable() {
   }
 
   function cancelEdit() {
-    setEditingId(null);
-    setEditName('');
-    setEditError('');
+    resetEditState();
   }
 
   async function handleDelete(id: string) {
@@ -341,12 +442,14 @@ export function GuestTable() {
     }
   }
 
+  const hasActiveFilters = search || filter !== 'all' || categoryFilter !== 'all';
+
   return (
     <div className="space-y-4">
       <AddGuestForm onCreated={handleGuestCreated} />
 
       <div className="rounded-[1.25rem] border border-[#e5e9e0] bg-white p-4 shadow-[0_4px_24px_rgba(30,58,58,0.05)] sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative min-w-0 flex-1">
             <Search
               className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8a8a]"
@@ -361,7 +464,13 @@ export function GuestTable() {
             />
           </div>
 
-          <GuestFilterDropdown value={filter} onChange={handleFilterChange} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <CategoryFilterDropdown
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}
+            />
+            <GuestFilterDropdown value={filter} onChange={handleFilterChange} />
+          </div>
         </div>
 
         <p className="mt-3 text-[0.75rem] text-[#8a8a8a]">ทั้งหมด {total} รายการ</p>
@@ -397,7 +506,7 @@ export function GuestTable() {
         <div className="rounded-[1.25rem] border border-dashed border-[#d5ddd0] bg-white/80 px-4 py-14 text-center">
           <AdminFloralDecor variant="empty" />
           <p className="mt-3 font-serif-cg text-[0.95rem] italic text-[#8a8a8a]">
-            {search || filter !== 'all' ? 'ไม่พบรายการที่ค้นหา' : 'ยังไม่มีรายชื่อแขก'}
+            {hasActiveFilters ? 'ไม่พบรายการที่ค้นหา' : 'ยังไม่มีรายชื่อแขก'}
           </p>
         </div>
       )}
@@ -407,10 +516,11 @@ export function GuestTable() {
           {/* Desktop table */}
           <div className="hidden overflow-hidden rounded-[1.25rem] border border-[#e5e9e0] bg-white shadow-[0_4px_24px_rgba(30,58,58,0.05)] md:block">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="w-full min-w-[860px] text-sm">
                 <thead className="border-b border-[#e5e9e0] bg-[#f7f9f5]">
                   <tr>
                     <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ชื่อบนการ์ด</th>
+                    <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ประเภทแขก</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">สถานะ</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">จำนวนคน</th>
                     <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ลิงก์เชิญ</th>
@@ -425,7 +535,9 @@ export function GuestTable() {
                       copiedId={copiedId}
                       editingId={editingId}
                       editName={editName}
+                      editCategory={editCategory}
                       onEditName={setEditName}
+                      onEditCategory={setEditCategory}
                       onStartEdit={startEdit}
                       onSaveEdit={saveEdit}
                       onCancelEdit={cancelEdit}
@@ -447,7 +559,9 @@ export function GuestTable() {
                 copiedId={copiedId}
                 editingId={editingId}
                 editName={editName}
+                editCategory={editCategory}
                 onEditName={setEditName}
+                onEditCategory={setEditCategory}
                 onStartEdit={startEdit}
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEdit}
@@ -474,9 +588,11 @@ interface GuestRowProps {
   copiedId: string | null;
   editingId: string | null;
   editName: string;
+  editCategory: GuestCategory | '';
   onEditName: (name: string) => void;
+  onEditCategory: (category: GuestCategory | '') => void;
   onStartEdit: (guest: Guest) => void;
-  onSaveEdit: (id: string, name: string) => void;
+  onSaveEdit: (id: string, name: string, category: GuestCategory | '') => void;
   onCancelEdit: () => void;
   onCopyLink: (guest: Guest) => void;
   onDelete: (id: string) => void;
@@ -487,7 +603,9 @@ function GuestRow({
   copiedId,
   editingId,
   editName,
+  editCategory,
   onEditName,
+  onEditCategory,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -512,7 +630,7 @@ function GuestRow({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  onSaveEdit(g.id, e.currentTarget.value);
+                  onSaveEdit(g.id, e.currentTarget.value, editCategory);
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
@@ -524,7 +642,7 @@ function GuestRow({
             />
             <button
               type="button"
-              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName)}
+              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName, editCategory)}
               className="text-[#6b7c5e] hover:text-[#1a3228]"
               aria-label="บันทึก"
             >
@@ -541,6 +659,24 @@ function GuestRow({
           </div>
         ) : (
           <GuestNameCell guest={g} />
+        )}
+      </td>
+      <td className="px-5 py-4">
+        {isEditing ? (
+          <select
+            value={editCategory}
+            onChange={(e) => onEditCategory(e.target.value as GuestCategory | '')}
+            className="w-full min-w-[10rem] rounded-lg border border-[#e5e9e0] bg-white px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
+          >
+            <option value="">เลือกประเภท</option>
+            {GUEST_CATEGORIES.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <CategoryBadge category={g.category} />
         )}
       </td>
       <td className="px-5 py-4 text-center">
@@ -575,7 +711,9 @@ function GuestCard({
   copiedId,
   editingId,
   editName,
+  editCategory,
   onEditName,
+  onEditCategory,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -590,40 +728,59 @@ function GuestCard({
   return (
     <div className="rounded-[1.25rem] border border-[#e5e9e0] bg-white p-4 shadow-[0_2px_16px_rgba(30,58,58,0.04)]">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 space-y-2">
           {isEditing ? (
-            <div className="flex items-center gap-2">
-              <input
-                ref={inputRef}
-                value={editName}
-                onChange={(e) => onEditName(e.target.value)}
-                onCompositionEnd={(e) => onEditName(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    onSaveEdit(g.id, e.currentTarget.value);
+            <>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  value={editName}
+                  onChange={(e) => onEditName(e.target.value)}
+                  onCompositionEnd={(e) => onEditName(e.currentTarget.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      onSaveEdit(g.id, e.currentTarget.value, editCategory);
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      onCancelEdit();
+                    }
+                  }}
+                  className="flex-1 rounded-lg border border-[#e5e9e0] px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    onSaveEdit(g.id, inputRef.current?.value || editName, editCategory)
                   }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    onCancelEdit();
-                  }
-                }}
-                className="flex-1 rounded-lg border border-[#e5e9e0] px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName)}
-                aria-label="บันทึก"
+                  aria-label="บันทึก"
+                >
+                  <Check className="h-4 w-4 text-[#6b7c5e]" />
+                </button>
+                <button type="button" onClick={onCancelEdit} aria-label="ยกเลิก">
+                  <X className="h-4 w-4 text-[#8a8a8a]" />
+                </button>
+              </div>
+              <select
+                value={editCategory}
+                onChange={(e) => onEditCategory(e.target.value as GuestCategory | '')}
+                className="w-full rounded-lg border border-[#e5e9e0] bg-white px-2.5 py-1.5 text-sm outline-none focus:border-[#6b7c5e]"
               >
-                <Check className="h-4 w-4 text-[#6b7c5e]" />
-              </button>
-              <button type="button" onClick={onCancelEdit} aria-label="ยกเลิก">
-                <X className="h-4 w-4 text-[#8a8a8a]" />
-              </button>
-            </div>
+                <option value="">เลือกประเภท</option>
+                {GUEST_CATEGORIES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </>
           ) : (
-            <GuestNameCell guest={g} />
+            <>
+              <GuestNameCell guest={g} />
+              <CategoryBadge category={g.category} />
+            </>
           )}
         </div>
         <span
@@ -650,6 +807,18 @@ function GuestCard({
         <ActionButtons guest={g} onStartEdit={onStartEdit} onDelete={onDelete} />
       </div>
     </div>
+  );
+}
+
+function CategoryBadge({ category }: { category?: GuestCategory }) {
+  if (!category) {
+    return <span className="text-xs text-[#8a8a8a]">ยังไม่ระบุ</span>;
+  }
+
+  return (
+    <span className="inline-flex rounded-full bg-[#eef2ea] px-2.5 py-1 text-xs text-[#3d5c45]">
+      {guestCategoryLabel(category)}
+    </span>
   );
 }
 
@@ -731,7 +900,7 @@ function ActionButtons({
         type="button"
         onClick={() => onStartEdit(g)}
         className="text-[#8a8a8a] transition-colors hover:text-[#6b7c5e]"
-        aria-label="แก้ไขชื่อ"
+        aria-label="แก้ไข"
       >
         <Pencil className="h-4 w-4" />
       </button>

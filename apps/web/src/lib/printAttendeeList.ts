@@ -1,4 +1,9 @@
 import { WEDDING } from '@/lib/constants';
+import {
+  GUEST_CATEGORY_PRINT_ORDER,
+  guestCategoryLabel,
+  type GuestCategory,
+} from '@/lib/guestCategory';
 import type { Guest } from '@/types';
 
 function escapeHtml(value: string): string {
@@ -14,10 +19,24 @@ function guestLabel(g: Guest): string {
 }
 
 function buildPrintHtml(guests: Guest[]): string {
-  const sorted = [...guests].sort((a, b) =>
-    guestLabel(a).localeCompare(guestLabel(b), 'th'),
-  );
-  const totalPeople = sorted.reduce((sum, g) => sum + (g.attendeeCount ?? 0), 0);
+  const grouped = new Map<GuestCategory | 'UNSET', Guest[]>();
+
+  for (const key of GUEST_CATEGORY_PRINT_ORDER) {
+    grouped.set(key ?? 'UNSET', []);
+  }
+
+  for (const guest of guests) {
+    const key = guest.category ?? 'UNSET';
+    const list = grouped.get(key) ?? [];
+    list.push(guest);
+    grouped.set(key, list);
+  }
+
+  for (const list of grouped.values()) {
+    list.sort((a, b) => guestLabel(a).localeCompare(guestLabel(b), 'th'));
+  }
+
+  const totalPeople = guests.reduce((sum, g) => sum + (g.attendeeCount ?? 0), 0);
   const printedAt = new Date().toLocaleString('th-TH', {
     dateStyle: 'long',
     timeStyle: 'short',
@@ -28,19 +47,37 @@ function buildPrintHtml(guests: Guest[]): string {
     year: 'numeric',
   });
 
-  const rows = sorted
-    .map((g, index) => {
-      const cardName = escapeHtml(guestLabel(g));
-      const count = g.attendeeCount != null ? `${g.attendeeCount} คน` : '—';
+  let rowIndex = 0;
+  const sections = GUEST_CATEGORY_PRINT_ORDER.map((key) => {
+    const mapKey = key ?? 'UNSET';
+    const list = grouped.get(mapKey) ?? [];
+    if (list.length === 0) return '';
 
-      return `<tr>
-        <td>${index + 1}</td>
-        <td>${cardName}</td>
-        <td class="center">${count}</td>
-        <td class="notes"></td>
-      </tr>`;
-    })
-    .join('');
+    const sectionLabel = guestCategoryLabel(key);
+    const sectionPeople = list.reduce((sum, g) => sum + (g.attendeeCount ?? 0), 0);
+    const rows = list
+      .map((g) => {
+        rowIndex += 1;
+        const cardName = escapeHtml(guestLabel(g));
+        const count = g.attendeeCount != null ? `${g.attendeeCount} คน` : '—';
+        const category = escapeHtml(guestCategoryLabel(g.category));
+
+        return `<tr>
+          <td>${rowIndex}</td>
+          <td>${cardName}</td>
+          <td>${category}</td>
+          <td class="center">${count}</td>
+          <td class="notes"></td>
+        </tr>`;
+      })
+      .join('');
+
+    return `
+      <tr class="section">
+        <td colspan="5">${escapeHtml(sectionLabel)} · ${list.length} รายการ · ${sectionPeople} คน</td>
+      </tr>
+      ${rows}`;
+  }).join('');
 
   return `<!DOCTYPE html>
 <html lang="th">
@@ -81,6 +118,11 @@ function buildPrintHtml(guests: Guest[]): string {
       background: #f7f9f5;
       font-weight: 600;
     }
+    tr.section td {
+      background: #eef2ea;
+      font-weight: 600;
+      color: #1a3228;
+    }
     td.center, th.center { text-align: center; }
     td.notes {
       min-width: 120px;
@@ -113,12 +155,13 @@ function buildPrintHtml(guests: Guest[]): string {
       <tr>
         <th style="width:48px">ลำดับ</th>
         <th>ชื่อบนการ์ด</th>
+        <th style="width:160px">ประเภทแขก</th>
         <th class="center" style="width:88px">จำนวนคน</th>
         <th>หมายเหตุ</th>
       </tr>
     </thead>
     <tbody>
-      ${rows}
+      ${sections}
     </tbody>
   </table>
   <script>

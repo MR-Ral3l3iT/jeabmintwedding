@@ -1,4 +1,5 @@
 import { API_URL } from './constants';
+import type { GuestCategory } from '@/lib/guestCategory';
 import type {
   RsvpPayload,
   RsvpResponse,
@@ -124,6 +125,7 @@ export async function getAdminGuests(
     search?: string;
     attending?: boolean;
     status?: 'pending' | 'attending' | 'declined' | 'responded';
+    category?: GuestCategory;
     sort?: 'created' | 'rsvp';
   },
 ): Promise<GuestListResponse> {
@@ -133,6 +135,7 @@ export async function getAdminGuests(
   if (params.search) qs.set('search', params.search);
   if (params.attending !== undefined) qs.set('attending', String(params.attending));
   if (params.status) qs.set('status', params.status);
+  if (params.category) qs.set('category', params.category);
   if (params.sort) qs.set('sort', params.sort);
 
   return request<GuestListResponse>(`/admin/guests?${qs.toString()}`, {
@@ -142,25 +145,27 @@ export async function getAdminGuests(
 
 export async function createAdminGuest(
   token: string,
-  displayName: string,
+  payload: { displayName: string; category: GuestCategory },
 ): Promise<Guest> {
   return request<Guest>('/admin/guests', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ displayName }),
+    body: JSON.stringify(payload),
   });
 }
 
 export async function updateAdminGuest(
   token: string,
   id: string,
-  displayName: string,
+  payload: { displayName?: string; category?: GuestCategory },
 ): Promise<Guest> {
-  const payload = { displayName: displayName.trim() };
   return request<Guest>(`/admin/guests/${id}`, {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      ...(payload.displayName !== undefined && { displayName: payload.displayName.trim() }),
+      ...(payload.category !== undefined && { category: payload.category }),
+    }),
   });
 }
 

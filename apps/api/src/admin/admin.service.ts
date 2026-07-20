@@ -26,6 +26,7 @@ export class AdminService {
     id: string;
     displayName: string | null;
     name: string | null;
+    category: string | null;
     attending: boolean | null;
     attendeeCount: number | null;
     createdAt: Date;
@@ -37,6 +38,7 @@ export class AdminService {
       id: g.id,
       displayName: g.displayName ?? undefined,
       name: g.name ?? undefined,
+      category: g.category ?? undefined,
       attending: g.attending ?? undefined,
       attendeeCount: g.attendeeCount ?? undefined,
       createdAt: g.createdAt,
@@ -46,8 +48,29 @@ export class AdminService {
     };
   }
 
+  private guestSelect = {
+    id: true,
+    displayName: true,
+    name: true,
+    category: true,
+    attending: true,
+    attendeeCount: true,
+    createdAt: true,
+    rsvpAt: true,
+    inviteToken: true,
+    wish: { select: { message: true } },
+  } as const;
+
   async getGuests(query: GetGuestsQueryDto): Promise<GuestListResponseDto> {
-    const { page = 1, limit = 50, search, attending, status, sort = 'created' } = query;
+    const {
+      page = 1,
+      limit = 50,
+      search,
+      attending,
+      status,
+      category,
+      sort = 'created',
+    } = query;
     const skip = (page - 1) * limit;
 
     const where = {
@@ -62,22 +85,13 @@ export class AdminService {
       ...(status === 'attending' && { rsvpAt: { not: null }, attending: true }),
       ...(status === 'declined' && { rsvpAt: { not: null }, attending: false }),
       ...(status === 'responded' && { rsvpAt: { not: null } }),
+      ...(category && { category }),
     };
 
     const [guests, total] = await this.prisma.$transaction([
       this.prisma.guest.findMany({
         where,
-        select: {
-          id: true,
-          displayName: true,
-          name: true,
-          attending: true,
-          attendeeCount: true,
-          createdAt: true,
-          rsvpAt: true,
-          inviteToken: true,
-          wish: { select: { message: true } },
-        },
+        select: this.guestSelect,
         skip,
         take: limit,
         orderBy:
@@ -106,19 +120,10 @@ export class AdminService {
         const guest = await this.prisma.guest.create({
           data: {
             displayName: dto.displayName.trim(),
+            category: dto.category,
             inviteToken,
           },
-          select: {
-            id: true,
-            displayName: true,
-            name: true,
-            attending: true,
-            attendeeCount: true,
-            createdAt: true,
-            rsvpAt: true,
-            inviteToken: true,
-            wish: { select: { message: true } },
-          },
+          select: this.guestSelect,
         });
         return this.toGuestDto(guest);
       } catch (error) {
@@ -146,18 +151,11 @@ export class AdminService {
 
     const guest = await this.prisma.guest.update({
       where: { id },
-      data: { displayName: dto.displayName.trim() },
-      select: {
-        id: true,
-        displayName: true,
-        name: true,
-        attending: true,
-        attendeeCount: true,
-        createdAt: true,
-        rsvpAt: true,
-        inviteToken: true,
-        wish: { select: { message: true } },
+      data: {
+        ...(dto.displayName !== undefined && { displayName: dto.displayName.trim() }),
+        ...(dto.category !== undefined && { category: dto.category }),
       },
+      select: this.guestSelect,
     });
 
     return this.toGuestDto(guest);

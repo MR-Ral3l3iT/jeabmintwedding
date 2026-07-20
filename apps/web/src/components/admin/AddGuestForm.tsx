@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { createAdminGuest } from '@/lib/api';
+import { GUEST_CATEGORIES, type GuestCategory } from '@/lib/guestCategory';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -15,6 +16,7 @@ interface AddGuestFormProps {
 
 export function AddGuestForm({ onCreated }: AddGuestFormProps) {
   const [displayName, setDisplayName] = useState('');
+  const [category, setCategory] = useState<GuestCategory | ''>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,13 +26,21 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
       setError('กรุณากรอกชื่อบนการ์ด');
       return;
     }
+    if (!category) {
+      setError('กรุณาเลือกประเภทแขก');
+      return;
+    }
 
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      await createAdminGuest(getToken(), displayName.trim());
+      await createAdminGuest(getToken(), {
+        displayName: displayName.trim(),
+        category,
+      });
       setDisplayName('');
+      setCategory('');
       setSuccess('สร้างลิงก์เชิญเรียบร้อยแล้ว');
       onCreated();
     } catch (err) {
@@ -55,10 +65,10 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
         สร้างการ์ดเชิญใหม่
       </h3>
       <p className="mt-1 text-[0.8rem] text-[#8a8a8a]">
-        กรอกชื่อที่ต้องการแสดงบนการ์ด ระบบจะสร้างลิงก์เฉพาะให้แต่ละคน
+        กรอกชื่อที่ต้องการแสดงบนการ์ด และเลือกประเภทแขก ระบบจะสร้างลิงก์เฉพาะให้แต่ละคน
       </p>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+      <div className="mt-4 flex flex-col gap-3">
         <input
           type="text"
           value={displayName}
@@ -68,18 +78,39 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
             setSuccess('');
           }}
           placeholder="เช่น คุณสมชาย และครอบครัว"
-          className="flex-1 rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-4 py-3 text-sm text-[#2c2c2c] outline-none transition-colors focus:border-[#6b7c5e] disabled:opacity-50"
+          className="w-full rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-4 py-3 text-sm text-[#2c2c2c] outline-none transition-colors focus:border-[#6b7c5e] disabled:opacity-50"
           disabled={loading}
         />
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6b7c5e] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a3228] disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          {loading ? 'กำลังสร้าง...' : 'สร้างลิงก์'}
-        </button>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <select
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value as GuestCategory | '');
+              setError('');
+              setSuccess('');
+            }}
+            disabled={loading}
+            className="w-full rounded-xl border border-[#e5e9e0] bg-[#faf8f4] px-4 py-3 text-sm text-[#2c2c2c] outline-none transition-colors focus:border-[#6b7c5e] disabled:opacity-50 sm:flex-1"
+          >
+            <option value="">เลือกประเภทแขก</option>
+            {GUEST_CATEGORIES.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#6b7c5e] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#1a3228] disabled:opacity-50 sm:shrink-0"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {loading ? 'กำลังสร้าง...' : 'สร้างลิงก์'}
+          </button>
+        </div>
       </div>
 
       {error && <p className="mt-2 text-xs text-red-500">{error}</p>}

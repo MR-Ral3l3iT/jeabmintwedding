@@ -8,21 +8,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GuestCategory {
+  GROOM_FRIEND
+  BRIDE_FRIEND
+  GROOM_ELDER
+  BRIDE_ELDER
+  OTHER
+}
+
 /// รายชื่อแขก — สร้างจากหลังบ้าน (เชิญ) หรือตอบ RSVP โดยตรง
 model Guest {
-  id          String    @id @default(cuid())
-  displayName String?   @db.VarChar(150)
-  name        String?   @db.VarChar(100)
-  attending   Boolean?
+  id            String         @id @default(cuid())
+  displayName   String?        @db.VarChar(150)
+  name          String?        @db.VarChar(100)
+  category      GuestCategory?
+  attending     Boolean?
   attendeeCount Int?
-  inviteToken String?   @unique @db.VarChar(32)
-  rsvpAt      DateTime?
-  lineUserId  String?   @db.VarChar(100)
-  createdAt   DateTime  @default(now())
+  inviteToken   String?        @unique @db.VarChar(32)
+  rsvpAt        DateTime?
+  lineUserId    String?        @db.VarChar(100)
+  createdAt     DateTime       @default(now())
 
   wish Wish?
 
   @@index([attending])
+  @@index([category])
   @@index([createdAt])
   @@index([displayName])
   @@map("guests")

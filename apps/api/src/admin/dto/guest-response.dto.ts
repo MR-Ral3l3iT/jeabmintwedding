@@ -16,6 +16,12 @@ export class GuestResponseDto {
   @ApiPropertyOptional({ description: 'จำนวนผู้มางาน' })
   attendeeCount?: number;
 
+  @ApiPropertyOptional({
+    enum: ['GROOM_FRIEND', 'BRIDE_FRIEND', 'GROOM_ELDER', 'BRIDE_ELDER', 'OTHER'],
+    description: 'ประเภทแขก',
+  })
+  category?: string;
+
   @ApiProperty()
   createdAt: Date;
 

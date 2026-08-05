@@ -21,18 +21,36 @@ export interface GuestCategory {
   createdAt: string;
 }
 
+export type PartySide = 'GROOM' | 'BRIDE';
+
 export interface Guest {
   id: string;
   displayName?: string;
   name?: string;
   categoryId?: string;
   categoryName?: string;
+  partySide?: PartySide;
   attending?: boolean;
   attendeeCount?: number;
   createdAt: string;
   rsvpAt?: string;
   inviteToken?: string;
+  lineUserId?: string;
   wishMessage?: string;
+}
+
+export interface LineFriend {
+  id: string;
+  lineUserId: string;
+  displayName?: string;
+  pictureUrl?: string;
+  followedAt: string;
+  unfollowedAt?: string;
+  guestId?: string;
+  guestDisplayName?: string;
+  guestName?: string;
+  guestPartySide?: PartySide;
+  isFollowing: boolean;
 }
 
 export interface GuestListResponse {
@@ -47,6 +65,26 @@ export interface InviteInfo {
   displayName: string;
   hasRsvp: boolean;
   attending?: boolean;
+}
+
+export interface JoinGuestInfo {
+  displayName?: string;
+  name?: string;
+  partySide?: PartySide;
+  inviteToken: string;
+}
+
+export interface JoinPayload {
+  name: string;
+  partySide: PartySide;
+  token?: string;
+}
+
+export interface JoinResponse {
+  inviteToken: string;
+  name: string;
+  partySide: PartySide;
+  lineOaUrl: string;
 }
 
 export interface Wish {
@@ -90,6 +128,9 @@ export interface WeddingSettings {
   bankAccountName?: string;
   paymentQrUrl?: string;
   timeline: TimelineItem[];
+  groomBio?: string;
+  brideBio?: string;
+  botKnowledge?: string;
   updatedAt: string;
 }
 

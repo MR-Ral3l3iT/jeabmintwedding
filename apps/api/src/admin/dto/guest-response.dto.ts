@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PartySide } from '@prisma/client';
 
 export class GuestResponseDto {
   @ApiProperty()
@@ -19,6 +20,9 @@ export class GuestResponseDto {
   @ApiPropertyOptional({ description: 'ชื่อประเภทแขก' })
   categoryName?: string;
 
+  @ApiPropertyOptional({ enum: PartySide, description: 'ฝั่งเจ้าบ่าว/เจ้าสาว' })
+  partySide?: PartySide;
+
   @ApiProperty()
   createdAt: Date;
 
@@ -27,6 +31,9 @@ export class GuestResponseDto {
 
   @ApiPropertyOptional()
   inviteToken?: string;
+
+  @ApiPropertyOptional({ description: 'LINE User ID เมื่อเชื่อมแล้ว' })
+  lineUserId?: string;
 
   @ApiPropertyOptional()
   wishMessage?: string;

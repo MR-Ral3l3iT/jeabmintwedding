@@ -7,7 +7,11 @@ import type {
   GuestListResponse,
   Guest,
   GuestCategory,
+  LineFriend,
   InviteInfo,
+  JoinGuestInfo,
+  JoinPayload,
+  JoinResponse,
   Wish,
   Stats,
   WeddingSettings,
@@ -104,6 +108,17 @@ export async function submitRsvp(payload: RsvpPayload): Promise<RsvpResponse> {
   });
 }
 
+export async function getJoinGuest(token: string): Promise<JoinGuestInfo> {
+  return request<JoinGuestInfo>(`/join/${token}`);
+}
+
+export async function submitJoin(payload: JoinPayload): Promise<JoinResponse> {
+  return request<JoinResponse>('/join', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
   return request<LoginResponse>('/auth/login', {
     method: 'POST',
@@ -157,7 +172,12 @@ export async function createAdminGuest(
 export async function updateAdminGuest(
   token: string,
   id: string,
-  payload: { displayName?: string; categoryId?: string },
+  payload: {
+    displayName?: string;
+    categoryId?: string;
+    name?: string;
+    partySide?: 'GROOM' | 'BRIDE';
+  },
 ): Promise<Guest> {
   return request<Guest>(`/admin/guests/${id}`, {
     method: 'PATCH',
@@ -165,6 +185,8 @@ export async function updateAdminGuest(
     body: JSON.stringify({
       ...(payload.displayName !== undefined && { displayName: payload.displayName.trim() }),
       ...(payload.categoryId !== undefined && { categoryId: payload.categoryId }),
+      ...(payload.name !== undefined && { name: payload.name.trim() }),
+      ...(payload.partySide !== undefined && { partySide: payload.partySide }),
     }),
   });
 }
@@ -200,6 +222,37 @@ export async function updateAdminGuestCategory(
 
 export async function deleteAdminGuestCategory(token: string, id: string): Promise<void> {
   return request<void>(`/admin/guest-categories/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function getAdminLineFriends(
+  token: string,
+  params: { linked?: 'all' | 'linked' | 'unlinked' } = {},
+): Promise<LineFriend[]> {
+  const qs = new URLSearchParams();
+  if (params.linked) qs.set('linked', params.linked);
+  const query = qs.toString();
+  return request<LineFriend[]>(`/admin/line-friends${query ? `?${query}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function linkAdminLineFriend(
+  token: string,
+  id: string,
+  guestId: string,
+): Promise<LineFriend> {
+  return request<LineFriend>(`/admin/line-friends/${id}/link`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ guestId }),
+  });
+}
+
+export async function unlinkAdminLineFriend(token: string, id: string): Promise<void> {
+  return request<void>(`/admin/line-friends/${id}/link`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

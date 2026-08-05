@@ -41,6 +41,11 @@ import {
   GuestCategoryResponseDto,
   UpdateGuestCategoryDto,
 } from './dto/guest-category.dto';
+import {
+  GetLineFriendsQueryDto,
+  LineFriendResponseDto,
+  LinkLineFriendDto,
+} from './dto/line-friend.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -51,6 +56,33 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly settingsService: SettingsService,
   ) {}
+
+  @Get('line-friends')
+  @ApiOperation({ summary: 'รายชื่อคนที่เพิ่ม LINE OA (Admin)' })
+  @ApiResponse({ status: 200, type: [LineFriendResponseDto] })
+  async getLineFriends(
+    @Query() query: GetLineFriendsQueryDto,
+  ): Promise<LineFriendResponseDto[]> {
+    return this.adminService.getLineFriends(query);
+  }
+
+  @Post('line-friends/:id/link')
+  @ApiOperation({ summary: 'ผูก LINE กับ Guest (Admin)' })
+  @ApiResponse({ status: 200, type: LineFriendResponseDto })
+  async linkLineFriend(
+    @Param('id') id: string,
+    @Body() dto: LinkLineFriendDto,
+  ): Promise<LineFriendResponseDto> {
+    return this.adminService.linkLineFriend(id, dto);
+  }
+
+  @Delete('line-friends/:id/link')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'ยกเลิกการผูก LINE กับ Guest (Admin)' })
+  @ApiResponse({ status: 204 })
+  async unlinkLineFriend(@Param('id') id: string): Promise<void> {
+    return this.adminService.unlinkLineFriend(id);
+  }
 
   @Get('guest-categories')
   @ApiOperation({ summary: 'รายการประเภทแขก (Admin)' })

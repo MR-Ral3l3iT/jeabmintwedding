@@ -1,8 +1,9 @@
 'use client';
 
-import { ChevronRight, Heart, MessageCircle, Phone } from 'lucide-react';
+import { Heart, Phone } from 'lucide-react';
 import { WEDDING } from '@/lib/constants';
 import { FloralDecor } from '@/components/invite/FloralDecor';
+import { JoinNextStepCta } from '@/components/join/JoinNextStepCta';
 import { useInvite } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
 
@@ -62,27 +63,7 @@ export function RsvpSection() {
 
             {invite?.attending && (
               <>
-                <a
-                  href={config.lineOaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 flex items-center gap-3 rounded-2xl bg-sage p-3.5 shadow-[0_6px_20px_rgba(107,124,94,0.28)] transition-colors hover:bg-teal-dark sm:p-4"
-                >
-                  <MessageCircle
-                    className="h-6 w-6 shrink-0 text-gold-light"
-                    strokeWidth={1.6}
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-thai text-sm font-semibold text-white">เพิ่ม LINE OA</p>
-                    <p className="mt-0.5 font-thai text-[0.68rem] leading-relaxed text-white/80">
-                      เพื่อรับข้อมูลอัปเดตของงาน และแผนผังสถานที่จัดงาน
-                    </p>
-                  </div>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                    <ChevronRight className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
-                  </span>
-                </a>
+                <JoinNextStepCta inviteToken={inviteToken} variant="dark" />
 
                 <div className="mt-3 flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Phone

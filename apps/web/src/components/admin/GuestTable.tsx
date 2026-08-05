@@ -23,7 +23,7 @@ import {
   updateAdminGuest,
   deleteAdminGuest,
 } from '@/lib/api';
-import { getInviteUrl } from '@/lib/constants';
+import { getInviteUrl, getJoinUrl } from '@/lib/constants';
 import { guestCategoryLabel } from '@/lib/guestCategory';
 import { formatThaiDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -238,7 +238,7 @@ export function GuestTable() {
   const [categories, setCategories] = useState<GuestCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
@@ -320,8 +320,19 @@ export function GuestTable() {
     if (!guest.inviteToken) return;
     try {
       await navigator.clipboard.writeText(getInviteUrl(guest.inviteToken));
-      setCopiedId(guest.id);
-      setTimeout(() => setCopiedId(null), 2000);
+      setCopiedKey(`${guest.id}:invite`);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      setActionError('ไม่สามารถคัดลอกลิงก์ได้');
+    }
+  }
+
+  async function handleCopyJoinLink(guest: Guest) {
+    if (!guest.inviteToken) return;
+    try {
+      await navigator.clipboard.writeText(getJoinUrl(guest.inviteToken));
+      setCopiedKey(`${guest.id}:join`);
+      setTimeout(() => setCopiedKey(null), 2000);
     } catch {
       setActionError('ไม่สามารถคัดลอกลิงก์ได้');
     }
@@ -471,7 +482,7 @@ export function GuestTable() {
                     <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ประเภทแขก</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">สถานะ</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">จำนวนคน</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ลิงก์เชิญ</th>
+                    <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ลิงก์</th>
                     <th className="px-5 py-3.5 text-right font-medium text-[#1a3228]">จัดการ</th>
                   </tr>
                 </thead>
@@ -481,7 +492,7 @@ export function GuestTable() {
                       key={g.id}
                       guest={g}
                       categories={categories}
-                      copiedId={copiedId}
+                      copiedKey={copiedKey}
                       editingId={editingId}
                       editName={editName}
                       editCategoryId={editCategoryId}
@@ -491,6 +502,7 @@ export function GuestTable() {
                       onSaveEdit={saveEdit}
                       onCancelEdit={cancelEdit}
                       onCopyLink={handleCopyLink}
+                      onCopyJoinLink={handleCopyJoinLink}
                       onDelete={handleDelete}
                     />
                   ))}
@@ -506,7 +518,7 @@ export function GuestTable() {
                 key={g.id}
                 guest={g}
                 categories={categories}
-                copiedId={copiedId}
+                copiedKey={copiedKey}
                 editingId={editingId}
                 editName={editName}
                 editCategoryId={editCategoryId}
@@ -516,6 +528,7 @@ export function GuestTable() {
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEdit}
                 onCopyLink={handleCopyLink}
+                onCopyJoinLink={handleCopyJoinLink}
                 onDelete={handleDelete}
               />
             ))}
@@ -536,7 +549,7 @@ export function GuestTable() {
 interface GuestRowProps {
   guest: Guest;
   categories: GuestCategory[];
-  copiedId: string | null;
+  copiedKey: string | null;
   editingId: string | null;
   editName: string;
   editCategoryId: string;
@@ -546,13 +559,14 @@ interface GuestRowProps {
   onSaveEdit: (id: string, name: string, categoryId: string) => void;
   onCancelEdit: () => void;
   onCopyLink: (guest: Guest) => void;
+  onCopyJoinLink: (guest: Guest) => void;
   onDelete: (id: string) => void;
 }
 
 function GuestRow({
   guest: g,
   categories,
-  copiedId,
+  copiedKey,
   editingId,
   editName,
   editCategoryId,
@@ -562,6 +576,7 @@ function GuestRow({
   onSaveEdit,
   onCancelEdit,
   onCopyLink,
+  onCopyJoinLink,
   onDelete,
 }: GuestRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -644,7 +659,12 @@ function GuestRow({
         <AttendeeCountCell guest={g} />
       </td>
       <td className="px-5 py-4">
-        <CopyLinkButton guest={g} copiedId={copiedId} onCopyLink={onCopyLink} />
+        <LinkCopyActions
+          guest={g}
+          copiedKey={copiedKey}
+          onCopyLink={onCopyLink}
+          onCopyJoinLink={onCopyJoinLink}
+        />
       </td>
       <td className="px-5 py-4 text-right">
         <ActionButtons guest={g} onStartEdit={onStartEdit} onDelete={onDelete} />
@@ -656,7 +676,7 @@ function GuestRow({
 function GuestCard({
   guest: g,
   categories,
-  copiedId,
+  copiedKey,
   editingId,
   editName,
   editCategoryId,
@@ -666,6 +686,7 @@ function GuestCard({
   onSaveEdit,
   onCancelEdit,
   onCopyLink,
+  onCopyJoinLink,
   onDelete,
 }: GuestRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -744,8 +765,13 @@ function GuestCard({
         จำนวนคน: <AttendeeCountCell guest={g} inline />
       </p>
 
-      <div className="mt-3 flex items-center justify-between border-t border-[#eceee9] pt-3">
-        <CopyLinkButton guest={g} copiedId={copiedId} onCopyLink={onCopyLink} />
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#eceee9] pt-3">
+        <LinkCopyActions
+          guest={g}
+          copiedKey={copiedKey}
+          onCopyLink={onCopyLink}
+          onCopyJoinLink={onCopyJoinLink}
+        />
         <ActionButtons guest={g} onStartEdit={onStartEdit} onDelete={onDelete} />
       </div>
     </div>
@@ -794,37 +820,61 @@ function GuestNameCell({ guest: g }: { guest: Guest }) {
   );
 }
 
-function CopyLinkButton({
+function LinkCopyActions({
   guest: g,
-  copiedId,
+  copiedKey,
   onCopyLink,
+  onCopyJoinLink,
 }: {
   guest: Guest;
-  copiedId: string | null;
+  copiedKey: string | null;
   onCopyLink: (guest: Guest) => void;
+  onCopyJoinLink: (guest: Guest) => void;
 }) {
   if (!g.inviteToken) {
     return <span className="text-xs text-[#8a8a8a]">—</span>;
   }
 
+  const inviteCopied = copiedKey === `${g.id}:invite`;
+  const joinCopied = copiedKey === `${g.id}:join`;
+
   return (
-    <button
-      type="button"
-      onClick={() => onCopyLink(g)}
-      className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
-    >
-      {copiedId === g.id ? (
-        <>
-          <Check className="h-3.5 w-3.5" />
-          คัดลอกแล้ว
-        </>
-      ) : (
-        <>
-          <Copy className="h-3.5 w-3.5" />
-          คัดลอกลิงก์
-        </>
-      )}
-    </button>
+    <div className="flex flex-col items-start gap-1.5">
+      <button
+        type="button"
+        onClick={() => onCopyLink(g)}
+        className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
+      >
+        {inviteCopied ? (
+          <>
+            <Check className="h-3.5 w-3.5" />
+            คัดลอกเชิญแล้ว
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            คัดลอกลิงก์เชิญ
+          </>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => onCopyJoinLink(g)}
+        className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
+      >
+        {joinCopied ? (
+          <>
+            <Check className="h-3.5 w-3.5" />
+            คัดลอก join แล้ว
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            คัดลอกลิงก์ join
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 

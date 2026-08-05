@@ -160,7 +160,7 @@ export async function getAdminGuests(
 
 export async function createAdminGuest(
   token: string,
-  payload: { displayName: string; categoryId: string },
+  payload: { displayName: string; categoryId: string; locale?: 'TH' | 'EN' },
 ): Promise<Guest> {
   return request<Guest>('/admin/guests', {
     method: 'POST',
@@ -177,6 +177,7 @@ export async function updateAdminGuest(
     categoryId?: string;
     name?: string;
     partySide?: 'GROOM' | 'BRIDE';
+    locale?: 'TH' | 'EN';
   },
 ): Promise<Guest> {
   return request<Guest>(`/admin/guests/${id}`, {
@@ -187,6 +188,7 @@ export async function updateAdminGuest(
       ...(payload.categoryId !== undefined && { categoryId: payload.categoryId }),
       ...(payload.name !== undefined && { name: payload.name.trim() }),
       ...(payload.partySide !== undefined && { partySide: payload.partySide }),
+      ...(payload.locale !== undefined && { locale: payload.locale }),
     }),
   });
 }

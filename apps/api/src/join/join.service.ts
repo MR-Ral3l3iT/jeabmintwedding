@@ -28,6 +28,7 @@ export class JoinService {
         displayName: true,
         name: true,
         partySide: true,
+        locale: true,
         inviteToken: true,
       },
     });
@@ -40,6 +41,7 @@ export class JoinService {
       displayName: guest.displayName ?? undefined,
       name: guest.name ?? undefined,
       partySide: guest.partySide ?? undefined,
+      locale: guest.locale,
       inviteToken: guest.inviteToken,
     };
   }

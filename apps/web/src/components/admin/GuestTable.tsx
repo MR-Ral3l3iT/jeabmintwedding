@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { AddGuestForm } from '@/components/admin/AddGuestForm';
 import { AdminFloralDecor } from '@/components/admin/AdminFloralDecor';
 import { AdminSelect } from '@/components/admin/AdminSelect';
-import type { Guest, GuestCategory } from '@/types';
+import type { Guest, GuestCategory, InviteLocale } from '@/types';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -242,6 +242,7 @@ export function GuestTable() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
+  const [editLocale, setEditLocale] = useState<InviteLocale>('TH');
   const [actionError, setActionError] = useState('');
   const [editError, setEditError] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
@@ -280,6 +281,7 @@ export function GuestTable() {
     setEditingId(null);
     setEditName('');
     setEditCategoryId('');
+    setEditLocale('TH');
     setEditError('');
   }
 
@@ -342,11 +344,12 @@ export function GuestTable() {
     setEditingId(guest.id);
     setEditName(guest.displayName ?? guest.name ?? '');
     setEditCategoryId(guest.categoryId ?? '');
+    setEditLocale(guest.locale === 'EN' ? 'EN' : 'TH');
     setActionError('');
     setEditError('');
   }
 
-  async function saveEdit(id: string, name: string, categoryId: string) {
+  async function saveEdit(id: string, name: string, categoryId: string, locale: InviteLocale) {
     if (savingEdit) return;
 
     const trimmed = name.trim();
@@ -366,6 +369,7 @@ export function GuestTable() {
       await updateAdminGuest(getToken(), id, {
         displayName: trimmed,
         categoryId,
+        locale,
       });
       resetEditState();
       fetchGuests();
@@ -496,8 +500,10 @@ export function GuestTable() {
                       editingId={editingId}
                       editName={editName}
                       editCategoryId={editCategoryId}
+                      editLocale={editLocale}
                       onEditName={setEditName}
                       onEditCategoryId={setEditCategoryId}
+                      onEditLocale={setEditLocale}
                       onStartEdit={startEdit}
                       onSaveEdit={saveEdit}
                       onCancelEdit={cancelEdit}
@@ -522,8 +528,10 @@ export function GuestTable() {
                 editingId={editingId}
                 editName={editName}
                 editCategoryId={editCategoryId}
+                editLocale={editLocale}
                 onEditName={setEditName}
                 onEditCategoryId={setEditCategoryId}
+                onEditLocale={setEditLocale}
                 onStartEdit={startEdit}
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEdit}
@@ -553,10 +561,12 @@ interface GuestRowProps {
   editingId: string | null;
   editName: string;
   editCategoryId: string;
+  editLocale: InviteLocale;
   onEditName: (name: string) => void;
   onEditCategoryId: (categoryId: string) => void;
+  onEditLocale: (locale: InviteLocale) => void;
   onStartEdit: (guest: Guest) => void;
-  onSaveEdit: (id: string, name: string, categoryId: string) => void;
+  onSaveEdit: (id: string, name: string, categoryId: string, locale: InviteLocale) => void;
   onCancelEdit: () => void;
   onCopyLink: (guest: Guest) => void;
   onCopyJoinLink: (guest: Guest) => void;
@@ -570,8 +580,10 @@ function GuestRow({
   editingId,
   editName,
   editCategoryId,
+  editLocale,
   onEditName,
   onEditCategoryId,
+  onEditLocale,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -597,7 +609,7 @@ function GuestRow({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
+                  onSaveEdit(g.id, e.currentTarget.value, editCategoryId, editLocale);
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
@@ -609,7 +621,9 @@ function GuestRow({
             />
             <button
               type="button"
-              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)}
+              onClick={() =>
+                onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId, editLocale)
+              }
               className="text-[#6b7c5e] hover:text-[#1a3228]"
               aria-label="บันทึก"
             >
@@ -630,13 +644,24 @@ function GuestRow({
       </td>
       <td className="px-5 py-4">
         {isEditing ? (
-          <AdminSelect
-            value={editCategoryId}
-            onChange={onEditCategoryId}
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-            placeholder="เลือกประเภท"
-            className="min-w-[10rem]"
-          />
+          <div className="space-y-2">
+            <AdminSelect
+              value={editCategoryId}
+              onChange={onEditCategoryId}
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="เลือกประเภท"
+              className="min-w-[10rem]"
+            />
+            <AdminSelect
+              value={editLocale}
+              onChange={(v) => onEditLocale(v as InviteLocale)}
+              options={[
+                { value: 'TH', label: 'ภาษาไทย' },
+                { value: 'EN', label: 'English' },
+              ]}
+              className="min-w-[10rem]"
+            />
+          </div>
         ) : (
           <CategoryBadge guest={g} />
         )}
@@ -680,8 +705,10 @@ function GuestCard({
   editingId,
   editName,
   editCategoryId,
+  editLocale,
   onEditName,
   onEditCategoryId,
+  onEditLocale,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
@@ -709,7 +736,7 @@ function GuestCard({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
+                      onSaveEdit(g.id, e.currentTarget.value, editCategoryId, editLocale);
                     }
                     if (e.key === 'Escape') {
                       e.preventDefault();
@@ -722,7 +749,12 @@ function GuestCard({
                 <button
                   type="button"
                   onClick={() =>
-                    onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)
+                    onSaveEdit(
+                      g.id,
+                      inputRef.current?.value || editName,
+                      editCategoryId,
+                      editLocale,
+                    )
                   }
                   aria-label="บันทึก"
                 >
@@ -737,6 +769,14 @@ function GuestCard({
                 onChange={onEditCategoryId}
                 options={categories.map((c) => ({ value: c.id, label: c.name }))}
                 placeholder="เลือกประเภท"
+              />
+              <AdminSelect
+                value={editLocale}
+                onChange={(v) => onEditLocale(v as InviteLocale)}
+                options={[
+                  { value: 'TH', label: 'ภาษาไทย' },
+                  { value: 'EN', label: 'English' },
+                ]}
               />
             </>
           ) : (
@@ -807,7 +847,19 @@ function AttendeeCountCell({ guest: g, inline = false }: { guest: Guest; inline?
 function GuestNameCell({ guest: g }: { guest: Guest }) {
   return (
     <>
-      <span className="font-medium text-[#2c2c2c]">{g.displayName ?? g.name ?? '—'}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-[#2c2c2c]">{g.displayName ?? g.name ?? '—'}</span>
+        <span
+          className={cn(
+            'inline-flex rounded-full px-2 py-0.5 text-[0.65rem]',
+            g.locale === 'EN'
+              ? 'bg-[#eef2ff] text-[#3d4f9a]'
+              : 'bg-[#f7f9f5] text-[#6b7c5e]',
+          )}
+        >
+          {g.locale === 'EN' ? 'EN' : 'TH'}
+        </span>
+      </div>
       {g.rsvpAt && g.name && g.name !== g.displayName && (
         <p className="mt-0.5 text-xs text-[#8a8a8a]">ตอบรับในนาม: {g.name}</p>
       )}

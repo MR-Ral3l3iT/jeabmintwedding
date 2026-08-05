@@ -38,6 +38,7 @@ export class AdminService {
     name: string | null;
     categoryId: string | null;
     partySide: 'GROOM' | 'BRIDE' | null;
+    locale: 'TH' | 'EN';
     attending: boolean | null;
     attendeeCount: number | null;
     createdAt: Date;
@@ -54,6 +55,7 @@ export class AdminService {
       categoryId: g.categoryId ?? undefined,
       categoryName: g.category?.name,
       partySide: g.partySide ?? undefined,
+      locale: g.locale,
       attending: g.attending ?? undefined,
       attendeeCount: g.attendeeCount ?? undefined,
       createdAt: g.createdAt,
@@ -70,6 +72,7 @@ export class AdminService {
     name: true,
     categoryId: true,
     partySide: true,
+    locale: true,
     attending: true,
     attendeeCount: true,
     createdAt: true,
@@ -229,6 +232,7 @@ export class AdminService {
           data: {
             displayName: dto.displayName.trim(),
             categoryId: dto.categoryId,
+            locale: dto.locale ?? 'TH',
             inviteToken,
           },
           select: this.guestSelect,
@@ -267,6 +271,7 @@ export class AdminService {
         ...(dto.displayName !== undefined && { displayName: dto.displayName.trim() }),
         ...(dto.name !== undefined && { name: dto.name.trim() }),
         ...(dto.partySide !== undefined && { partySide: dto.partySide }),
+        ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       },
       select: this.guestSelect,

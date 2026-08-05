@@ -1,8 +1,12 @@
+'use client';
+
 import { WEDDING } from '@/lib/constants';
 import { FloralDecor } from '@/components/invite/FloralDecor';
+import { useInviteMessages } from '@/components/invite/InviteContext';
 import { Clock, Gift, Heart, Shirt, Smartphone, type LucideIcon } from 'lucide-react';
+import type { InviteMessages } from '@/lib/i18n';
 
-const ICONS: Record<(typeof WEDDING.guestManual)[number]['icon'], LucideIcon> = {
+const ICONS: Record<InviteMessages['manual']['items'][number]['icon'], LucideIcon> = {
   clock: Clock,
   shirt: Shirt,
   smartphone: Smartphone,
@@ -19,7 +23,7 @@ function CardDivider() {
   );
 }
 
-function ManualIcon({ name }: { name: (typeof WEDDING.guestManual)[number]['icon'] }) {
+function ManualIcon({ name }: { name: InviteMessages['manual']['items'][number]['icon'] }) {
   const Icon = ICONS[name];
 
   return (
@@ -39,14 +43,16 @@ function ManualIcon({ name }: { name: (typeof WEDDING.guestManual)[number]['icon
 }
 
 export function GuestManualSection() {
+  const messages = useInviteMessages();
+
   return (
     <section id="manual" className="relative overflow-hidden pb-12 pt-12 md:pb-14 md:pt-16">
       <FloralDecor preset="manual" />
 
       <div className="relative z-10 mx-auto max-w-[680px] px-6 text-center">
         <div className="reveal">
-          <p className="mb-2 text-[0.8rem] tracking-[0.1em] text-sage">สำหรับแขก</p>
-          <h2 className="font-display text-[2.5rem] text-teal-dark">Guest Guide</h2>
+          <p className="mb-2 text-[0.8rem] tracking-[0.1em] text-sage">{messages.manual.eyebrow}</p>
+          <h2 className="font-display text-[2.5rem] text-teal-dark">{messages.manual.title}</h2>
           <div className="mx-auto mt-3 flex max-w-[12rem] items-center gap-3 text-gold">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gold-light to-transparent" />
             <span className="text-[0.55rem]">✦</span>
@@ -55,7 +61,7 @@ export function GuestManualSection() {
         </div>
 
         <div className="reveal mt-6 grid grid-cols-2 gap-3">
-          {WEDDING.guestManual.map((item) => (
+          {messages.manual.items.map((item) => (
             <div
               key={item.title}
               className="rounded-xl border border-sage-pale bg-white p-4 text-center shadow-[0_4px_16px_rgba(30,58,58,0.06)] transition-all hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(30,58,58,0.1)]"
@@ -72,7 +78,7 @@ export function GuestManualSection() {
                 {item.desc}
               </p>
 
-              {'showPalette' in item && item.showPalette && (
+              {item.showPalette && (
                 <div className="mt-3 flex flex-nowrap items-center justify-center gap-1.5">
                   {WEDDING.palette.map((color) => (
                     <div
@@ -86,7 +92,7 @@ export function GuestManualSection() {
                 </div>
               )}
 
-              {'hashtag' in item && item.hashtag && (
+              {item.hashtag && (
                 <p className="mt-2 font-thai text-[0.72rem] font-medium tracking-[0.02em] text-teal-dark">
                   {item.hashtag}
                 </p>

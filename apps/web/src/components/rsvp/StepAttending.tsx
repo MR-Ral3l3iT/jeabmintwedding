@@ -14,7 +14,8 @@ import {
 import { submitRsvp } from '@/lib/api';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
 import { JoinNextStepCta } from '@/components/join/JoinNextStepCta';
-import { useInvite } from '@/components/invite/InviteContext';
+import { useInvite, useInviteMessages } from '@/components/invite/InviteContext';
+import { fillTemplate } from '@/lib/i18n';
 
 interface StepAttendingProps {
   guestName: string;
@@ -24,6 +25,7 @@ interface StepAttendingProps {
 export function StepAttending({ guestName, showNameHint = false }: StepAttendingProps) {
   const config = useWeddingConfig();
   const { inviteToken, markRsvpComplete } = useInvite();
+  const messages = useInviteMessages();
   const [attendeeCount, setAttendeeCount] = useState(1);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -36,7 +38,7 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
 
   async function handleConfirm() {
     if (attendeeCount < 1) {
-      setError('กรุณาระบุจำนวนผู้มางานอย่างน้อย 1 คน');
+      setError(messages.rsvpAttending.countError);
       return;
     }
 
@@ -63,7 +65,9 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
       <div className="min-w-0 text-center">
         <PartyPopper className="mx-auto mb-2 h-5 w-5 text-gold" strokeWidth={1.6} aria-hidden />
 
-        <h2 className="font-display text-[1.65rem] leading-tight text-teal-dark">ยินดีมากค่ะ!</h2>
+        <h2 className="font-display text-[1.65rem] leading-tight text-teal-dark">
+          {messages.rsvpAttending.delighted}
+        </h2>
 
         <p className="my-2 text-[0.45rem] text-gold-light/80" aria-hidden>
           ✦
@@ -75,17 +79,17 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
               ④
             </span>
           )}
-          <p className="font-thai text-xs text-text-light">ขอบคุณที่</p>
+          <p className="font-thai text-xs text-text-light">{messages.rsvpAttending.thanksPrefix}</p>
           <p className="mt-1 font-display text-[1.5rem] leading-tight text-teal-dark sm:text-[1.65rem]">
             {guestName}
           </p>
-          <p className="mt-1 font-thai text-sm text-teal-dark">จะมาร่วมงานกับเรา</p>
+          <p className="mt-1 font-thai text-sm text-teal-dark">{messages.rsvpAttending.willJoin}</p>
         </div>
 
         <div className="mb-4 rounded-2xl border border-sage-pale/70 bg-[#F3EDE4] px-4 py-4 text-left">
           <label className="mb-3 flex items-center justify-center gap-2 font-thai text-sm font-semibold text-teal-dark">
             <Users className="h-4 w-4 text-gold" strokeWidth={1.6} aria-hidden />
-            จำนวนผู้มางาน (รวมท่าน)
+            {messages.rsvpAttending.countLabel}
           </label>
 
           <div className="flex items-center justify-center gap-4">
@@ -126,7 +130,12 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
           </div>
 
           <p className="mt-3 text-center font-thai text-[0.68rem] leading-relaxed text-text-light">
-            ช่วยระบุจำนวนคนที่มางานจริง <br /> เพื่อให้เราจัดเตรียมอาหารและที่นั่งได้พอดี
+            {messages.rsvpAttending.countHint.split('\n').map((line, i, arr) => (
+              <span key={i}>
+                {line}
+                {i < arr.length - 1 ? <br /> : null}
+              </span>
+            ))}
           </p>
         </div>
 
@@ -141,10 +150,10 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              กำลังบันทึก...
+              {messages.rsvpAttending.saving}
             </>
           ) : (
-            'ยืนยันการเข้าร่วมงาน'
+            messages.rsvpAttending.confirm
           )}
         </button>
       </div>
@@ -155,19 +164,21 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
     <div className="min-w-0 text-center">
       <PartyPopper className="mx-auto mb-2 h-5 w-5 text-gold" strokeWidth={1.6} aria-hidden />
 
-      <h2 className="font-display text-[1.65rem] leading-tight text-teal-dark">ขอบคุณมากค่ะ!</h2>
+      <h2 className="font-display text-[1.65rem] leading-tight text-teal-dark">
+        {messages.rsvpAttending.thankYouTitle}
+      </h2>
 
       <p className="my-2 text-[0.45rem] text-gold-light/80" aria-hidden>
         ✦
       </p>
 
       <div className="relative mb-4">
-        <p className="font-thai text-xs text-text-light">เราดีใจมากที่</p>
+        <p className="font-thai text-xs text-text-light">{messages.rsvpAttending.gladPrefix}</p>
         <p className="mt-1 font-display text-[1.6rem] leading-tight text-teal-dark sm:text-[1.75rem]">
           {guestName}
         </p>
         <p className="mt-1.5 inline-flex items-center justify-center gap-1.5 font-thai text-sm text-teal-dark">
-          จะมาร่วมงานกับเรา {attendeeCount} ท่าน
+          {fillTemplate(messages.rsvpAttending.willJoinCount, { count: attendeeCount })}
           <Heart className="h-3.5 w-3.5 text-sage" strokeWidth={1.8} aria-hidden />
         </p>
       </div>
@@ -177,7 +188,7 @@ export function StepAttending({ guestName, showNameHint = false }: StepAttending
       <div className="mt-3 flex items-start gap-2 rounded-xl border border-sage-pale/50 bg-white/70 p-3 text-left">
         <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" strokeWidth={1.6} aria-hidden />
         <p className="font-thai text-[0.68rem] leading-relaxed text-text-light">
-          ไม่สามารถ @line ได้ ติดต่อได้ที่เบอร์
+          {messages.rsvpAttending.lineContactNote}
           <br />
           {config.groomNickname} :{' '}
           <a

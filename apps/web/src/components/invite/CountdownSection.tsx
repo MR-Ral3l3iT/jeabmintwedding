@@ -3,16 +3,18 @@
 import { WEDDING } from '@/lib/constants';
 import { useCountdown } from '@/hooks/useCountdown';
 import { FloralDecor } from '@/components/invite/FloralDecor';
-
-const UNITS = [
-  { key: 'days' as const, label: 'วัน' },
-  { key: 'hours' as const, label: 'ชั่วโมง' },
-  { key: 'minutes' as const, label: 'นาที' },
-  { key: 'seconds' as const, label: 'วินาที' },
-];
+import { useInviteMessages } from '@/components/invite/InviteContext';
 
 export function CountdownSection() {
   const countdown = useCountdown(WEDDING.date);
+  const messages = useInviteMessages();
+
+  const units = [
+    { key: 'days' as const, label: messages.countdown.days },
+    { key: 'hours' as const, label: messages.countdown.hours },
+    { key: 'minutes' as const, label: messages.countdown.minutes },
+    { key: 'seconds' as const, label: messages.countdown.seconds },
+  ];
 
   return (
     <section id="countdown" className="relative overflow-hidden pt-20 pb-6 md:pb-14">
@@ -20,15 +22,15 @@ export function CountdownSection() {
 
       <div className="relative z-10 px-6 max-w-[680px] mx-auto text-center">
         <div className="reveal">
-          <p className="text-[0.8rem] tracking-[0.1em] text-sage mb-2">นับถอยหลัง</p>
-          <h2 className="font-display text-[2.5rem] text-teal-dark mb-2">สู่วันวิวาห์</h2>
+          <p className="text-[0.8rem] tracking-[0.1em] text-sage mb-2">{messages.countdown.eyebrow}</p>
+          <h2 className="font-display text-[2.5rem] text-teal-dark mb-2">{messages.countdown.title}</h2>
           <p className="font-thai text-base font-medium tracking-[0.12em] text-sage">
-            31 ตุลาคม 2569
+            {messages.countdown.date}
           </p>
         </div>
 
         <div className="reveal grid grid-cols-4 gap-3 max-w-[400px] mx-auto my-8">
-          {UNITS.map(({ key, label }) => (
+          {units.map(({ key, label }) => (
             <div
               key={key}
               className="bg-white rounded-xl py-5 px-2 shadow-[0_4px_20px_rgba(30,58,58,0.08)] border border-sage-pale relative overflow-hidden"

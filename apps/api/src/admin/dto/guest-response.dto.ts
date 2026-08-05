@@ -23,6 +23,9 @@ export class GuestResponseDto {
   @ApiPropertyOptional({ enum: PartySide, description: 'ฝั่งเจ้าบ่าว/เจ้าสาว' })
   partySide?: PartySide;
 
+  @ApiPropertyOptional({ enum: ['TH', 'EN'], description: 'ภาษาการ์ดเชิญ' })
+  locale?: 'TH' | 'EN';
+
   @ApiProperty()
   createdAt: Date;
 

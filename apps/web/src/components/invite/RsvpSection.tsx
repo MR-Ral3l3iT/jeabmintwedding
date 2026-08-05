@@ -4,8 +4,9 @@ import { Heart, Phone } from 'lucide-react';
 import { WEDDING } from '@/lib/constants';
 import { FloralDecor } from '@/components/invite/FloralDecor';
 import { JoinNextStepCta } from '@/components/join/JoinNextStepCta';
-import { useInvite } from '@/components/invite/InviteContext';
+import { useInvite, useInviteMessages } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
+import { formatWeddingDate } from '@/lib/i18n';
 
 function GoldDivider() {
   return (
@@ -17,16 +18,13 @@ function GoldDivider() {
   );
 }
 
-const RSVP_DEADLINE_LABEL = WEDDING.rsvpDeadline.toLocaleDateString('th-TH', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-
 export function RsvpSection() {
   const config = useWeddingConfig();
-  const { inviteToken, invite } = useInvite();
+  const { inviteToken, invite, locale } = useInvite();
+  const messages = useInviteMessages();
   const hasRsvp = Boolean(inviteToken && invite?.hasRsvp);
+  const deadline = config.rsvpDeadline ?? WEDDING.rsvpDeadline;
+  const deadlineLabel = formatWeddingDate(locale, deadline);
 
   function handleOpen() {
     window.dispatchEvent(new CustomEvent('open-rsvp-modal'));
@@ -42,7 +40,7 @@ export function RsvpSection() {
 
       <div className="reveal relative z-10 mx-auto max-w-lg px-2">
         <h2 className="mb-5 font-display text-[clamp(2.5rem,10vw,3rem)] text-gold-light">
-          {hasRsvp ? 'ขอบคุณค่ะ' : 'ยืนยันการเข้าร่วม'}
+          {hasRsvp ? messages.rsvp.titleThanks : messages.rsvp.titleConfirm}
         </h2>
 
         <GoldDivider />
@@ -52,11 +50,11 @@ export function RsvpSection() {
             <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 text-center">
               <p className="font-thai text-sm leading-relaxed text-white/85">
                 {invite?.attending
-                  ? 'เราได้รับการยืนยันเข้าร่วมงานของท่านแล้ว'
-                  : 'เราได้รับการแจ้งของท่านแล้ว ขอบคุณที่แจ้งให้ทราบค่ะ'}
+                  ? messages.rsvp.confirmedAttending
+                  : messages.rsvp.confirmedDeclined}
               </p>
               <p className="mt-3 inline-flex items-center justify-center gap-1.5 font-thai text-xs text-white/55">
-                หากมีข้อสงสัย ติดต่อเจ้าบ่าวเจ้าสาวได้ตามช่องทางด้านล่างค่ะ
+                {messages.rsvp.contactHint}
                 <Heart className="h-3 w-3 text-gold-light/70" strokeWidth={1.8} aria-hidden />
               </p>
             </div>
@@ -72,7 +70,7 @@ export function RsvpSection() {
                     aria-hidden
                   />
                   <p className="font-thai text-[0.68rem] leading-relaxed text-white/60">
-                    ไม่สามารถ @line ได้ ติดต่อได้ที่เบอร์
+                    {messages.rsvp.lineContactNote}
                     <br />
                     {config.groomNickname} :{' '}
                     <a
@@ -89,7 +87,7 @@ export function RsvpSection() {
         ) : (
           <>
             <p className="mb-8 mt-5 font-serif-cg text-sm italic text-white/60 md:text-base">
-              กรุณาตอบรับภายในวันที่ {RSVP_DEADLINE_LABEL}
+              {messages.rsvp.deadlinePrefix} {deadlineLabel}
             </p>
 
             <div className="mb-8 inline-block animate-rsvp-cta rounded-[60px] motion-reduce:animate-none">
@@ -100,7 +98,7 @@ export function RsvpSection() {
                   background: 'linear-gradient(135deg, #C8A96E, #A8852E)',
                 }}
               >
-                ตอบรับ / ฝากคำอวยพร
+                {messages.rsvp.cta}
               </button>
             </div>
           </>

@@ -1,11 +1,19 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  getInviteMessages,
+  normalizeInviteLocale,
+  type InviteLocale,
+  type InviteMessages,
+} from '@/lib/i18n';
 import type { InviteInfo } from '@/types';
 
 export interface InviteContextValue {
   inviteToken?: string;
   invite?: InviteInfo;
+  locale: InviteLocale;
+  messages: InviteMessages;
   showNameHints?: boolean;
   envelopeOpened: boolean;
   setEnvelopeOpened: (opened: boolean) => void;
@@ -13,6 +21,8 @@ export interface InviteContextValue {
 }
 
 const InviteContext = createContext<InviteContextValue>({
+  locale: 'TH',
+  messages: getInviteMessages('TH'),
   envelopeOpened: false,
   setEnvelopeOpened: () => {},
   markRsvpComplete: () => {},
@@ -23,11 +33,13 @@ export function InviteProvider({
   inviteToken,
   invite,
   showNameHints,
+  locale: localeProp,
 }: {
   children: React.ReactNode;
   inviteToken?: string;
   invite?: InviteInfo;
   showNameHints?: boolean;
+  locale?: InviteLocale | string;
 }) {
   const [envelopeOpened, setEnvelopeOpenedState] = useState(false);
   const [inviteState, setInviteState] = useState<InviteInfo | undefined>(invite);
@@ -44,11 +56,18 @@ export function InviteProvider({
     setInviteState((prev) => (prev ? { ...prev, hasRsvp: true, attending } : prev));
   }, []);
 
+  const locale = normalizeInviteLocale(
+    localeProp ?? inviteState?.locale ?? invite?.locale,
+  );
+  const messages = useMemo(() => getInviteMessages(locale), [locale]);
+
   return (
     <InviteContext.Provider
       value={{
         inviteToken,
         invite: inviteState,
+        locale,
+        messages,
         showNameHints,
         envelopeOpened,
         setEnvelopeOpened,
@@ -62,4 +81,8 @@ export function InviteProvider({
 
 export function useInvite() {
   return useContext(InviteContext);
+}
+
+export function useInviteMessages(): InviteMessages {
+  return useContext(InviteContext).messages;
 }

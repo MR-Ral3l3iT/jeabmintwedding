@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { useInviteMessages } from '@/components/invite/InviteContext';
 
 interface LineLinkHintProps {
   inviteToken?: string;
@@ -9,6 +10,7 @@ interface LineLinkHintProps {
 }
 
 export function LineLinkHint({ inviteToken, variant = 'light' }: LineLinkHintProps) {
+  const messages = useInviteMessages();
   const [copied, setCopied] = useState(false);
   if (!inviteToken) return null;
 
@@ -40,7 +42,7 @@ export function LineLinkHint({ inviteToken, variant = 'light' }: LineLinkHintPro
             : 'font-thai text-[0.68rem] leading-relaxed text-text-light'
         }
       >
-        หลังเพิ่มเพื่อนแล้ว พิมพ์ในแชท LINE เพื่อเชื่อมบัญชี:
+        {messages.lineHint.intro}
       </p>
       <div className="mt-2 flex items-center gap-2">
         <code
@@ -62,7 +64,7 @@ export function LineLinkHint({ inviteToken, variant = 'light' }: LineLinkHintPro
           }
         >
           {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-          {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
+          {copied ? messages.lineHint.copied : messages.lineHint.copy}
         </button>
       </div>
     </div>

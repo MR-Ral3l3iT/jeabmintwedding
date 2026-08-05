@@ -13,6 +13,7 @@ export class InviteService {
         displayName: true,
         rsvpAt: true,
         attending: true,
+        locale: true,
       },
     });
 
@@ -23,9 +24,11 @@ export class InviteService {
     return {
       displayName: guest.displayName,
       hasRsvp: guest.rsvpAt !== null,
-      ...(guest.rsvpAt !== null && guest.attending !== null && {
-        attending: guest.attending,
-      }),
+      locale: guest.locale,
+      ...(guest.rsvpAt !== null &&
+        guest.attending !== null && {
+          attending: guest.attending,
+        }),
     };
   }
 }

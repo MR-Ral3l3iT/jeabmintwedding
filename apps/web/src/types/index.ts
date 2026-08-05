@@ -22,6 +22,7 @@ export interface GuestCategory {
 }
 
 export type PartySide = 'GROOM' | 'BRIDE';
+export type InviteLocale = 'TH' | 'EN';
 
 export interface Guest {
   id: string;
@@ -30,6 +31,7 @@ export interface Guest {
   categoryId?: string;
   categoryName?: string;
   partySide?: PartySide;
+  locale?: InviteLocale;
   attending?: boolean;
   attendeeCount?: number;
   createdAt: string;
@@ -65,6 +67,7 @@ export interface InviteInfo {
   displayName: string;
   hasRsvp: boolean;
   attending?: boolean;
+  locale?: InviteLocale;
 }
 
 export interface JoinGuestInfo {
@@ -72,6 +75,7 @@ export interface JoinGuestInfo {
   name?: string;
   partySide?: PartySide;
   inviteToken: string;
+  locale?: InviteLocale;
 }
 
 export interface JoinPayload {

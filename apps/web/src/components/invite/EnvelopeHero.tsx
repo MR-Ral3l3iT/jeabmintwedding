@@ -5,7 +5,7 @@ import { ASSETS, HERO_GRADIENT } from '@/lib/constants';
 import { EnvelopeSurface, GoldStamp } from '@/components/invite/EnvelopeParts';
 import { FloralDecor } from '@/components/invite/FloralDecor';
 import { FlyingButterflies } from '@/components/invite/FlyingButterflies';
-import { useInvite } from '@/components/invite/InviteContext';
+import { useInvite, useInviteMessages } from '@/components/invite/InviteContext';
 
 /** ขอบทองรอบซอง (ปิดไว้ — ลองแล้วชอบแบบไม่มีขอบนอก) */
 const SHOW_ENVELOPE_OUTER_GOLD_BORDER = false;
@@ -40,6 +40,7 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
   const [flapOpen, setFlapOpen] = useState(false);
   const [flapBehind, setFlapBehind] = useState(false);
   const { setEnvelopeOpened } = useInvite();
+  const messages = useInviteMessages();
 
   const clipUid = useId().replace(/:/g, '');
   const flapClip = `url(#${clipUid}-flap)`;
@@ -119,10 +120,10 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
             : 'mb-4 opacity-0 animate-[fadeUp_1s_ease_2s_forwards]',
         ].join(' ')}
       >
-        <p className="text-xs tracking-[0.1em] text-sage mb-2 font-thai">เรียนเชิญ</p>
+        <p className="text-xs tracking-[0.1em] text-sage mb-2 font-thai">{messages.hero.cordiallyInvite}</p>
         <p className="relative inline-block font-display text-[clamp(1.85rem,8vw,2.5rem)] md:text-3xl text-teal-dark">
           {showNameHints && guestName && <HintBadge num="①" />}
-          {guestName ?? 'ยินดีต้อนรับ'}
+          {guestName ?? messages.hero.welcome}
         </p>
       </div>
 
@@ -135,7 +136,7 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
         ].join(' ')}
         onClick={opened ? undefined : handleOpen}
         role={opened ? undefined : 'button'}
-        aria-label={opened ? undefined : 'แตะเพื่อเปิดซอง'}
+        aria-label={opened ? undefined : messages.hero.openEnvelope}
         tabIndex={opened ? -1 : 0}
         onKeyDown={opened ? undefined : (e) => e.key === 'Enter' && handleOpen()}
       >
@@ -213,14 +214,14 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
                 <div className="relative z-[1] flex min-h-[clamp(148px,40vw,172px)] md:min-h-[158px] flex-col items-center justify-start gap-1 px-4 pt-4 pb-3 text-center">
                   {showNameHints && guestName && <HintBadge num="②" />}
                   <p className="font-thai text-[0.72rem] md:text-[0.65rem] font-medium tracking-[0.18em] text-gold">
-                    เรียนเชิญ
+                    {messages.hero.cordiallyInvite}
                   </p>
                   <p className="font-thai text-[clamp(1.12rem,5.8vw,1.3rem)] md:text-[1.08rem] font-medium text-teal-dark leading-snug px-1 pb-7">
-                    {guestName ?? 'ยินดีต้อนรับ'}
+                    {guestName ?? messages.hero.welcome}
                   </p>
                   <CardGoldLine className="w-9" />
                   <p className="font-thai text-[0.58rem] tracking-[0.1em] text-sage/90 leading-relaxed">
-                    สู่พิธีมงคลสมรส
+                    {messages.hero.toCeremony}
                   </p>
                 </div>
               </div>
@@ -343,7 +344,7 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
         {!opened && (
         <div className="text-center mt-4">
           <p className="font-serif-cg text-sm text-sage tracking-[0.08em] opacity-70 animate-float">
-            แตะเพื่อเปิดซอง ✦
+            {messages.hero.tapToOpen}
           </p>
         </div>
         )}
@@ -355,13 +356,13 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
         <div className="relative z-10 flex w-full min-h-0 flex-1 items-center justify-center px-4 pb-28">
           <div className="text-center opacity-0 animate-[fadeUp_0.8s_ease_0.9s_forwards]">
             <p className="font-thai text-[clamp(0.75rem,3.4vw,0.9rem)] tracking-[0.14em] text-sage mb-3">
-              พิธีมงคลสมรสของ
+              {messages.hero.weddingOf}
             </p>
             <p className="font-display text-[clamp(3rem,12vw,4.5rem)] md:text-[3.25rem] lg:text-[3rem] text-teal-dark leading-none">
               Jeab <span className="text-gold text-[0.7em]">&</span> Mint
             </p>
             <p className="font-serif-cg text-lg md:text-base tracking-[0.1em] text-sage mt-3">
-              31 ตุลาคม 2569
+              {messages.hero.weddingDate}
             </p>
           </div>
         </div>
@@ -374,7 +375,7 @@ export function EnvelopeHero({ guestName, showNameHints }: EnvelopeHeroProps) {
         onClick={() => document.getElementById('quote')?.scrollIntoView({ behavior: 'smooth' })}
       >
         <div className="w-px h-10 bg-gradient-to-b from-sage to-transparent animate-scroll-pulse" />
-        <span>เลื่อนลง</span>
+        <span>{messages.hero.scrollDown}</span>
       </div>
       )}
     </section>

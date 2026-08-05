@@ -26,6 +26,11 @@ enum PartySide {
   BRIDE
 }
 
+enum InviteLocale {
+  TH
+  EN
+}
+
 /// รายชื่อแขก — สร้างจากหลังบ้าน (เชิญ) หรือตอบ RSVP โดยตรง
 model Guest {
   id            String         @id @default(cuid())
@@ -33,6 +38,7 @@ model Guest {
   name          String?        @db.VarChar(100)
   categoryId    String?        @map("category_id")
   partySide     PartySide?     @map("party_side")
+  locale        InviteLocale   @default(TH)
   attending     Boolean?
   attendeeCount Int?
   inviteToken   String?        @unique @db.VarChar(32)

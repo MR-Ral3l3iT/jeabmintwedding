@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PartySide } from '@prisma/client';
+import { InviteLocale, PartySide } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateGuestDto {
@@ -32,6 +32,14 @@ export class UpdateGuestDto {
   @IsOptional()
   @IsEnum(PartySide, { message: 'กรุณาเลือกฝั่งเจ้าบ่าวหรือเจ้าสาว' })
   partySide?: PartySide;
+
+  @ApiPropertyOptional({
+    enum: InviteLocale,
+    description: 'ภาษาการ์ดเชิญ',
+  })
+  @IsOptional()
+  @IsEnum(InviteLocale, { message: 'กรุณาเลือกภาษาการ์ด' })
+  locale?: InviteLocale;
 
   @ApiPropertyOptional({
     description: 'รหัสประเภทแขก',

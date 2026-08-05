@@ -1,4 +1,5 @@
 import { JoinForm } from '@/components/join/JoinForm';
+import { InviteProvider } from '@/components/invite/InviteContext';
 import { WeddingSettingsProvider } from '@/components/WeddingSettingsProvider';
 import { fetchWeddingSettings } from '@/lib/fetchWeddingSettings';
 
@@ -7,7 +8,9 @@ export default async function JoinPage() {
 
   return (
     <WeddingSettingsProvider settings={settings}>
-      <JoinForm />
+      <InviteProvider locale="TH">
+        <JoinForm />
+      </InviteProvider>
     </WeddingSettingsProvider>
   );
 }

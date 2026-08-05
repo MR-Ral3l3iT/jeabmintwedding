@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PartySide } from '@prisma/client';
+import { InviteLocale, PartySide } from '@prisma/client';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class JoinGuestResponseDto {
@@ -11,6 +11,9 @@ export class JoinGuestResponseDto {
 
   @ApiPropertyOptional({ enum: PartySide })
   partySide?: PartySide;
+
+  @ApiProperty({ enum: InviteLocale })
+  locale: InviteLocale;
 
   @ApiProperty()
   inviteToken: string;

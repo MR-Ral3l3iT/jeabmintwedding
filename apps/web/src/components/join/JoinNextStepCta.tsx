@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Check, Copy, QrCode } from 'lucide-react';
 import { getJoinUrl } from '@/lib/constants';
+import { useInviteMessages } from '@/components/invite/InviteContext';
 
 interface JoinNextStepCtaProps {
   inviteToken?: string;
@@ -11,6 +12,7 @@ interface JoinNextStepCtaProps {
 }
 
 export function JoinNextStepCta({ inviteToken, variant = 'light' }: JoinNextStepCtaProps) {
+  const messages = useInviteMessages();
   const [copied, setCopied] = useState(false);
   const joinUrl = getJoinUrl(inviteToken);
   const isDark = variant === 'dark';
@@ -54,7 +56,7 @@ export function JoinNextStepCta({ inviteToken, variant = 'light' }: JoinNextStep
             : 'font-thai text-sm font-semibold text-teal-dark'
         }
       >
-        ขั้นตอนถัดไป: ลงทะเบียนชื่อเรียก
+        {messages.joinCta.title}
       </p>
       <p
         className={
@@ -63,9 +65,12 @@ export function JoinNextStepCta({ inviteToken, variant = 'light' }: JoinNextStep
             : 'mt-1 font-thai text-[0.68rem] leading-relaxed text-text-light'
         }
       >
-        สแกน QR หรือเปิดลิงก์ เพื่อกรอกชื่อเรียกในงานและเลือกฝั่ง
-        <br />
-        จากนั้นค่อยเพิ่มเพื่อน LINE OA
+        {messages.joinCta.body.split('\n').map((line, i, arr) => (
+          <span key={i}>
+            {line}
+            {i < arr.length - 1 ? <br /> : null}
+          </span>
+        ))}
       </p>
 
       <div className="mx-auto mt-4 inline-flex rounded-2xl bg-white p-3 shadow-sm">
@@ -80,7 +85,7 @@ export function JoinNextStepCta({ inviteToken, variant = 'light' }: JoinNextStep
             : 'mt-4 inline-flex w-full items-center justify-center rounded-full bg-sage px-4 py-2.5 font-thai text-sm font-medium text-white transition-colors hover:bg-teal-dark'
         }
       >
-        เปิดหน้าลงทะเบียน
+        {messages.joinCta.open}
       </a>
 
       <button
@@ -93,7 +98,7 @@ export function JoinNextStepCta({ inviteToken, variant = 'light' }: JoinNextStep
         }
       >
         {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-        {copied ? 'คัดลอกลิงก์แล้ว' : 'คัดลอกลิงก์'}
+        {copied ? messages.joinCta.copied : messages.joinCta.copy}
       </button>
     </div>
   );

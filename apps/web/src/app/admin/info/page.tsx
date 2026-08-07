@@ -1,6 +1,7 @@
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { EventInfoEditor } from '@/components/admin/EventInfoEditor';
 import { GuestCategoryManager } from '@/components/admin/GuestCategoryManager';
+import { OfflineJoinQrPanel } from '@/components/admin/OfflineJoinQrPanel';
 import { Clock } from 'lucide-react';
 
 export default function AdminInfoPage() {
@@ -25,6 +26,7 @@ export default function AdminInfoPage() {
         </header>
         <div className="space-y-4">
           <GuestCategoryManager />
+          <OfflineJoinQrPanel />
           <EventInfoEditor />
         </div>
       </main>

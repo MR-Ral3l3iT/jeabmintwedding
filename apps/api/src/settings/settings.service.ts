@@ -65,6 +65,9 @@ export class SettingsService {
     bankAccountName: string | null;
     paymentQrUrl: string | null;
     timeline: Prisma.JsonValue;
+    groomBio: string | null;
+    brideBio: string | null;
+    botKnowledge: string | null;
     updatedAt: Date;
   }): WeddingSettingsResponseDto {
     return {
@@ -87,6 +90,9 @@ export class SettingsService {
       bankAccountName: row.bankAccountName ?? undefined,
       paymentQrUrl: row.paymentQrUrl ?? undefined,
       timeline: this.parseTimeline(row.timeline),
+      groomBio: row.groomBio ?? undefined,
+      brideBio: row.brideBio ?? undefined,
+      botKnowledge: row.botKnowledge ?? undefined,
       updatedAt: row.updatedAt.toISOString(),
     };
   }
@@ -156,6 +162,11 @@ export class SettingsService {
       }),
       ...(dto.timeline !== undefined && {
         timeline: dto.timeline as unknown as Prisma.InputJsonValue,
+      }),
+      ...(dto.groomBio !== undefined && { groomBio: dto.groomBio.trim() || null }),
+      ...(dto.brideBio !== undefined && { brideBio: dto.brideBio.trim() || null }),
+      ...(dto.botKnowledge !== undefined && {
+        botKnowledge: dto.botKnowledge.trim() || null,
       }),
     };
 

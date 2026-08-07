@@ -21,27 +21,60 @@ model GuestCategory {
   @@map("guest_categories")
 }
 
+enum PartySide {
+  GROOM
+  BRIDE
+}
+
+enum InviteLocale {
+  TH
+  EN
+}
+
 /// รายชื่อแขก — สร้างจากหลังบ้าน (เชิญ) หรือตอบ RSVP โดยตรง
 model Guest {
   id            String         @id @default(cuid())
   displayName   String?        @db.VarChar(150)
   name          String?        @db.VarChar(100)
   categoryId    String?        @map("category_id")
+  partySide     PartySide?     @map("party_side")
+  locale        InviteLocale   @default(TH)
   attending     Boolean?
   attendeeCount Int?
   inviteToken   String?        @unique @db.VarChar(32)
   rsvpAt        DateTime?
-  lineUserId    String?        @db.VarChar(100)
+  lineUserId    String?        @unique @db.VarChar(100)
   createdAt     DateTime       @default(now())
 
-  category GuestCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  wish     Wish?
+  category   GuestCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  wish       Wish?
+  lineFriend LineFriend?
 
   @@index([attending])
   @@index([categoryId])
+  @@index([partySide])
   @@index([createdAt])
   @@index([displayName])
   @@map("guests")
+}
+
+/// คนที่เพิ่มเพื่อน LINE OA (เก็บก่อน แล้วค่อยผูกกับ Guest)
+model LineFriend {
+  id          String    @id @default(cuid())
+  lineUserId  String    @unique @map("line_user_id") @db.VarChar(100)
+  displayName String?   @map("display_name") @db.VarChar(150)
+  pictureUrl  String?   @map("picture_url") @db.VarChar(500)
+  followedAt  DateTime  @default(now()) @map("followed_at")
+  unfollowedAt DateTime? @map("unfollowed_at")
+  guestId     String?   @unique @map("guest_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  guest Guest? @relation(fields: [guestId], references: [id], onDelete: SetNull)
+
+  @@index([followedAt])
+  @@index([unfollowedAt])
+  @@map("line_friends")
 }
 
 /// คำอวยพรจากแขก
@@ -88,6 +121,9 @@ model WeddingSettings {
   bankAccountName   String?  @db.VarChar(150)
   paymentQrUrl      String?  @db.VarChar(500)
   timeline          Json     @default("[]")
+  groomBio          String?  @map("groom_bio") @db.Text
+  brideBio          String?  @map("bride_bio") @db.Text
+  botKnowledge      String?  @map("bot_knowledge") @db.Text
   updatedAt         DateTime @updatedAt
 
   @@map("wedding_settings")

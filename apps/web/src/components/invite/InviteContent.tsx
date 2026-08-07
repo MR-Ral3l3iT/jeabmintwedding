@@ -27,7 +27,12 @@ export function InviteContent({
 }: InviteContentProps) {
   return (
     <WeddingSettingsProvider settings={settings}>
-      <InviteProvider inviteToken={inviteToken} invite={invite} showNameHints={showNameHints}>
+      <InviteProvider
+        inviteToken={inviteToken}
+        invite={invite}
+        showNameHints={showNameHints}
+        locale={invite?.locale}
+      >
         <LoadingScreen />
         <InvitePageButterflies />
         <main className="w-full">

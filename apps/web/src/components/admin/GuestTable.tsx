@@ -23,14 +23,14 @@ import {
   updateAdminGuest,
   deleteAdminGuest,
 } from '@/lib/api';
-import { getInviteUrl } from '@/lib/constants';
+import { getInviteUrl, getJoinUrl } from '@/lib/constants';
 import { guestCategoryLabel } from '@/lib/guestCategory';
 import { formatThaiDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { AddGuestForm } from '@/components/admin/AddGuestForm';
 import { AdminFloralDecor } from '@/components/admin/AdminFloralDecor';
 import { AdminSelect } from '@/components/admin/AdminSelect';
-import type { Guest, GuestCategory } from '@/types';
+import type { Guest, GuestCategory, InviteLocale } from '@/types';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -238,10 +238,11 @@ export function GuestTable() {
   const [categories, setCategories] = useState<GuestCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
+  const [editLocale, setEditLocale] = useState<InviteLocale>('TH');
   const [actionError, setActionError] = useState('');
   const [editError, setEditError] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
@@ -280,6 +281,7 @@ export function GuestTable() {
     setEditingId(null);
     setEditName('');
     setEditCategoryId('');
+    setEditLocale('TH');
     setEditError('');
   }
 
@@ -320,8 +322,19 @@ export function GuestTable() {
     if (!guest.inviteToken) return;
     try {
       await navigator.clipboard.writeText(getInviteUrl(guest.inviteToken));
-      setCopiedId(guest.id);
-      setTimeout(() => setCopiedId(null), 2000);
+      setCopiedKey(`${guest.id}:invite`);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      setActionError('ไม่สามารถคัดลอกลิงก์ได้');
+    }
+  }
+
+  async function handleCopyJoinLink(guest: Guest) {
+    if (!guest.inviteToken) return;
+    try {
+      await navigator.clipboard.writeText(getJoinUrl(guest.inviteToken));
+      setCopiedKey(`${guest.id}:join`);
+      setTimeout(() => setCopiedKey(null), 2000);
     } catch {
       setActionError('ไม่สามารถคัดลอกลิงก์ได้');
     }
@@ -331,11 +344,12 @@ export function GuestTable() {
     setEditingId(guest.id);
     setEditName(guest.displayName ?? guest.name ?? '');
     setEditCategoryId(guest.categoryId ?? '');
+    setEditLocale(guest.locale === 'EN' ? 'EN' : 'TH');
     setActionError('');
     setEditError('');
   }
 
-  async function saveEdit(id: string, name: string, categoryId: string) {
+  async function saveEdit(id: string, name: string, categoryId: string, locale: InviteLocale) {
     if (savingEdit) return;
 
     const trimmed = name.trim();
@@ -355,6 +369,7 @@ export function GuestTable() {
       await updateAdminGuest(getToken(), id, {
         displayName: trimmed,
         categoryId,
+        locale,
       });
       resetEditState();
       fetchGuests();
@@ -471,7 +486,7 @@ export function GuestTable() {
                     <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ประเภทแขก</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">สถานะ</th>
                     <th className="px-5 py-3.5 text-center font-medium text-[#1a3228]">จำนวนคน</th>
-                    <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ลิงก์เชิญ</th>
+                    <th className="px-5 py-3.5 text-left font-medium text-[#1a3228]">ลิงก์</th>
                     <th className="px-5 py-3.5 text-right font-medium text-[#1a3228]">จัดการ</th>
                   </tr>
                 </thead>
@@ -481,16 +496,19 @@ export function GuestTable() {
                       key={g.id}
                       guest={g}
                       categories={categories}
-                      copiedId={copiedId}
+                      copiedKey={copiedKey}
                       editingId={editingId}
                       editName={editName}
                       editCategoryId={editCategoryId}
+                      editLocale={editLocale}
                       onEditName={setEditName}
                       onEditCategoryId={setEditCategoryId}
+                      onEditLocale={setEditLocale}
                       onStartEdit={startEdit}
                       onSaveEdit={saveEdit}
                       onCancelEdit={cancelEdit}
                       onCopyLink={handleCopyLink}
+                      onCopyJoinLink={handleCopyJoinLink}
                       onDelete={handleDelete}
                     />
                   ))}
@@ -506,16 +524,19 @@ export function GuestTable() {
                 key={g.id}
                 guest={g}
                 categories={categories}
-                copiedId={copiedId}
+                copiedKey={copiedKey}
                 editingId={editingId}
                 editName={editName}
                 editCategoryId={editCategoryId}
+                editLocale={editLocale}
                 onEditName={setEditName}
                 onEditCategoryId={setEditCategoryId}
+                onEditLocale={setEditLocale}
                 onStartEdit={startEdit}
                 onSaveEdit={saveEdit}
                 onCancelEdit={cancelEdit}
                 onCopyLink={handleCopyLink}
+                onCopyJoinLink={handleCopyJoinLink}
                 onDelete={handleDelete}
               />
             ))}
@@ -536,32 +557,38 @@ export function GuestTable() {
 interface GuestRowProps {
   guest: Guest;
   categories: GuestCategory[];
-  copiedId: string | null;
+  copiedKey: string | null;
   editingId: string | null;
   editName: string;
   editCategoryId: string;
+  editLocale: InviteLocale;
   onEditName: (name: string) => void;
   onEditCategoryId: (categoryId: string) => void;
+  onEditLocale: (locale: InviteLocale) => void;
   onStartEdit: (guest: Guest) => void;
-  onSaveEdit: (id: string, name: string, categoryId: string) => void;
+  onSaveEdit: (id: string, name: string, categoryId: string, locale: InviteLocale) => void;
   onCancelEdit: () => void;
   onCopyLink: (guest: Guest) => void;
+  onCopyJoinLink: (guest: Guest) => void;
   onDelete: (id: string) => void;
 }
 
 function GuestRow({
   guest: g,
   categories,
-  copiedId,
+  copiedKey,
   editingId,
   editName,
   editCategoryId,
+  editLocale,
   onEditName,
   onEditCategoryId,
+  onEditLocale,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
   onCopyLink,
+  onCopyJoinLink,
   onDelete,
 }: GuestRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -582,7 +609,7 @@ function GuestRow({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
+                  onSaveEdit(g.id, e.currentTarget.value, editCategoryId, editLocale);
                 }
                 if (e.key === 'Escape') {
                   e.preventDefault();
@@ -594,7 +621,9 @@ function GuestRow({
             />
             <button
               type="button"
-              onClick={() => onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)}
+              onClick={() =>
+                onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId, editLocale)
+              }
               className="text-[#6b7c5e] hover:text-[#1a3228]"
               aria-label="บันทึก"
             >
@@ -615,13 +644,24 @@ function GuestRow({
       </td>
       <td className="px-5 py-4">
         {isEditing ? (
-          <AdminSelect
-            value={editCategoryId}
-            onChange={onEditCategoryId}
-            options={categories.map((c) => ({ value: c.id, label: c.name }))}
-            placeholder="เลือกประเภท"
-            className="min-w-[10rem]"
-          />
+          <div className="space-y-2">
+            <AdminSelect
+              value={editCategoryId}
+              onChange={onEditCategoryId}
+              options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              placeholder="เลือกประเภท"
+              className="min-w-[10rem]"
+            />
+            <AdminSelect
+              value={editLocale}
+              onChange={(v) => onEditLocale(v as InviteLocale)}
+              options={[
+                { value: 'TH', label: 'ภาษาไทย' },
+                { value: 'EN', label: 'English' },
+              ]}
+              className="min-w-[10rem]"
+            />
+          </div>
         ) : (
           <CategoryBadge guest={g} />
         )}
@@ -644,7 +684,12 @@ function GuestRow({
         <AttendeeCountCell guest={g} />
       </td>
       <td className="px-5 py-4">
-        <CopyLinkButton guest={g} copiedId={copiedId} onCopyLink={onCopyLink} />
+        <LinkCopyActions
+          guest={g}
+          copiedKey={copiedKey}
+          onCopyLink={onCopyLink}
+          onCopyJoinLink={onCopyJoinLink}
+        />
       </td>
       <td className="px-5 py-4 text-right">
         <ActionButtons guest={g} onStartEdit={onStartEdit} onDelete={onDelete} />
@@ -656,16 +701,19 @@ function GuestRow({
 function GuestCard({
   guest: g,
   categories,
-  copiedId,
+  copiedKey,
   editingId,
   editName,
   editCategoryId,
+  editLocale,
   onEditName,
   onEditCategoryId,
+  onEditLocale,
   onStartEdit,
   onSaveEdit,
   onCancelEdit,
   onCopyLink,
+  onCopyJoinLink,
   onDelete,
 }: GuestRowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -688,7 +736,7 @@ function GuestCard({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      onSaveEdit(g.id, e.currentTarget.value, editCategoryId);
+                      onSaveEdit(g.id, e.currentTarget.value, editCategoryId, editLocale);
                     }
                     if (e.key === 'Escape') {
                       e.preventDefault();
@@ -701,7 +749,12 @@ function GuestCard({
                 <button
                   type="button"
                   onClick={() =>
-                    onSaveEdit(g.id, inputRef.current?.value || editName, editCategoryId)
+                    onSaveEdit(
+                      g.id,
+                      inputRef.current?.value || editName,
+                      editCategoryId,
+                      editLocale,
+                    )
                   }
                   aria-label="บันทึก"
                 >
@@ -716,6 +769,14 @@ function GuestCard({
                 onChange={onEditCategoryId}
                 options={categories.map((c) => ({ value: c.id, label: c.name }))}
                 placeholder="เลือกประเภท"
+              />
+              <AdminSelect
+                value={editLocale}
+                onChange={(v) => onEditLocale(v as InviteLocale)}
+                options={[
+                  { value: 'TH', label: 'ภาษาไทย' },
+                  { value: 'EN', label: 'English' },
+                ]}
               />
             </>
           ) : (
@@ -744,8 +805,13 @@ function GuestCard({
         จำนวนคน: <AttendeeCountCell guest={g} inline />
       </p>
 
-      <div className="mt-3 flex items-center justify-between border-t border-[#eceee9] pt-3">
-        <CopyLinkButton guest={g} copiedId={copiedId} onCopyLink={onCopyLink} />
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#eceee9] pt-3">
+        <LinkCopyActions
+          guest={g}
+          copiedKey={copiedKey}
+          onCopyLink={onCopyLink}
+          onCopyJoinLink={onCopyJoinLink}
+        />
         <ActionButtons guest={g} onStartEdit={onStartEdit} onDelete={onDelete} />
       </div>
     </div>
@@ -781,7 +847,19 @@ function AttendeeCountCell({ guest: g, inline = false }: { guest: Guest; inline?
 function GuestNameCell({ guest: g }: { guest: Guest }) {
   return (
     <>
-      <span className="font-medium text-[#2c2c2c]">{g.displayName ?? g.name ?? '—'}</span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium text-[#2c2c2c]">{g.displayName ?? g.name ?? '—'}</span>
+        <span
+          className={cn(
+            'inline-flex rounded-full px-2 py-0.5 text-[0.65rem]',
+            g.locale === 'EN'
+              ? 'bg-[#eef2ff] text-[#3d4f9a]'
+              : 'bg-[#f7f9f5] text-[#6b7c5e]',
+          )}
+        >
+          {g.locale === 'EN' ? 'EN' : 'TH'}
+        </span>
+      </div>
       {g.rsvpAt && g.name && g.name !== g.displayName && (
         <p className="mt-0.5 text-xs text-[#8a8a8a]">ตอบรับในนาม: {g.name}</p>
       )}
@@ -794,37 +872,61 @@ function GuestNameCell({ guest: g }: { guest: Guest }) {
   );
 }
 
-function CopyLinkButton({
+function LinkCopyActions({
   guest: g,
-  copiedId,
+  copiedKey,
   onCopyLink,
+  onCopyJoinLink,
 }: {
   guest: Guest;
-  copiedId: string | null;
+  copiedKey: string | null;
   onCopyLink: (guest: Guest) => void;
+  onCopyJoinLink: (guest: Guest) => void;
 }) {
   if (!g.inviteToken) {
     return <span className="text-xs text-[#8a8a8a]">—</span>;
   }
 
+  const inviteCopied = copiedKey === `${g.id}:invite`;
+  const joinCopied = copiedKey === `${g.id}:join`;
+
   return (
-    <button
-      type="button"
-      onClick={() => onCopyLink(g)}
-      className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
-    >
-      {copiedId === g.id ? (
-        <>
-          <Check className="h-3.5 w-3.5" />
-          คัดลอกแล้ว
-        </>
-      ) : (
-        <>
-          <Copy className="h-3.5 w-3.5" />
-          คัดลอกลิงก์
-        </>
-      )}
-    </button>
+    <div className="flex flex-col items-start gap-1.5">
+      <button
+        type="button"
+        onClick={() => onCopyLink(g)}
+        className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
+      >
+        {inviteCopied ? (
+          <>
+            <Check className="h-3.5 w-3.5" />
+            คัดลอกเชิญแล้ว
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            คัดลอกลิงก์เชิญ
+          </>
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={() => onCopyJoinLink(g)}
+        className="inline-flex items-center gap-1.5 text-xs text-[#6b7c5e] transition-colors hover:text-[#1a3228]"
+      >
+        {joinCopied ? (
+          <>
+            <Check className="h-3.5 w-3.5" />
+            คัดลอก join แล้ว
+          </>
+        ) : (
+          <>
+            <Copy className="h-3.5 w-3.5" />
+            คัดลอกลิงก์ join
+          </>
+        )}
+      </button>
+    </div>
   );
 }
 

@@ -96,3 +96,8 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:30
 export function getInviteUrl(token: string): string {
   return `${SITE_URL}/invite/${token}`;
 }
+
+/** หน้ากลางลงทะเบียนชื่อเรียก + ฝั่ง — มี token = อัปเดตแขก / ไม่มี = ออฟไลน์สร้างใหม่ */
+export function getJoinUrl(token?: string): string {
+  return token ? `${SITE_URL}/join/${token}` : `${SITE_URL}/join`;
+}

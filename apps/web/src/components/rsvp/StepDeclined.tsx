@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Banknote, Check, Clipboard, Heart, Leaf, Mail } from 'lucide-react';
 import { submitRsvp } from '@/lib/api';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
+import { useInviteMessages } from '@/components/invite/InviteContext';
+import { fillTemplate } from '@/lib/i18n';
 
 interface StepDeclinedProps {
   guestName: string;
@@ -23,11 +25,14 @@ function GoldDivider() {
 
 export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
   const config = useWeddingConfig();
+  const messages = useInviteMessages();
   const [activeTab, setActiveTab] = useState<Tab>('wish');
   const [wishText, setWishText] = useState('');
   const [wishSent, setWishSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [copied, setCopied] = useState<'pp' | 'bank' | null>(null);
+
+  const coupleNames = `${config.brideNickname} & ${config.groomNickname}`;
 
   async function handleSendWish() {
     if (!wishText.trim()) return;
@@ -60,35 +65,40 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
       </div>
 
       <h2 className="font-display text-[1.65rem] leading-tight text-teal-dark">
-        ขอบคุณที่แจ้งให้ทราบนะคะ
+        {messages.rsvpDeclined.title}
       </h2>
 
       <GoldDivider />
 
       <p className="mb-4 font-thai text-xs leading-relaxed text-text-light">
-        แม้ไม่ได้มาร่วมงาน ก็ส่งความรักและคำอวยพรถึง
+        {messages.rsvpDeclined.intro}
         <br />
         <span className="mt-1.5 block text-base font-semibold text-teal-dark sm:text-[1.05rem]">
-          {config.brideNickname} & {config.groomNickname}
+          {coupleNames}
         </span>
       </p>
 
       {wishSent ? (
         <div className="rounded-xl border border-sage-pale/70 bg-[#F3EDE4] p-5 text-center">
           <Mail className="mx-auto mb-2 h-8 w-8 text-gold" strokeWidth={1.5} aria-hidden />
-          <h3 className="font-display text-[1.5rem] text-teal-dark">ส่งแล้วค่ะ!</h3>
+          <h3 className="font-display text-[1.5rem] text-teal-dark">{messages.rsvpDeclined.sentTitle}</h3>
           <p className="mt-1 font-thai text-sm text-text-light">
-            ขอบคุณมากนะคะ{' '}
-            <span className="font-semibold text-teal-dark">
-              {config.brideNickname} & {config.groomNickname}
-            </span>{' '}
-            จะอ่านทุกข้อความเลย
+            {messages.rsvpDeclined.sentBody.split('{names}').map((part, i, arr) =>
+              i < arr.length - 1 ? (
+                <span key={i}>
+                  {part}
+                  <span className="font-semibold text-teal-dark">{coupleNames}</span>
+                </span>
+              ) : (
+                <span key={i}>{part}</span>
+              ),
+            )}
           </p>
           <button
             onClick={onClose}
             className="mt-4 rounded-full bg-sage px-6 py-2.5 font-thai text-sm font-medium text-gold-light"
           >
-            ปิด
+            {messages.rsvpDeclined.close}
           </button>
         </div>
       ) : (
@@ -105,7 +115,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
               ].join(' ')}
             >
               <Mail className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
-              การ์ดอวยพร
+              {messages.rsvpDeclined.tabWish}
             </button>
             <button
               type="button"
@@ -118,7 +128,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
               ].join(' ')}
             >
               <Banknote className="h-4 w-4 shrink-0" strokeWidth={1.6} aria-hidden />
-              ช่วยงาน
+              {messages.rsvpDeclined.tabPay}
             </button>
           </div>
 
@@ -126,13 +136,13 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
             <div className="text-left">
               <label className="mb-1.5 flex items-center gap-1.5 font-thai text-xs text-text-light">
                 <Leaf className="h-3.5 w-3.5 shrink-0 text-gold" strokeWidth={1.5} aria-hidden />
-                ข้อความถึง {config.brideNickname} & {config.groomNickname}
+                {fillTemplate(messages.rsvpDeclined.wishLabel, { names: coupleNames })}
               </label>
               <div className="relative">
                 <textarea
                   value={wishText}
                   onChange={(e) => setWishText(e.target.value)}
-                  placeholder="ขอให้มีความสุขมากๆ นะคะ..."
+                  placeholder={messages.rsvpDeclined.wishPlaceholder}
                   maxLength={300}
                   rows={4}
                   className="box-border w-full resize-y rounded-xl border border-sage-pale bg-white px-3.5 py-3 pb-7 font-thai text-sm text-text outline-none transition-colors focus:border-sage"
@@ -152,7 +162,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                   ✦
                 </span>
                 <span className="flex items-center gap-2">
-                  {submitting ? 'กำลังส่ง...' : 'ส่งการ์ดอวยพร'}
+                  {submitting ? messages.rsvpDeclined.sending : messages.rsvpDeclined.sendWish}
                   {!submitting && <Mail className="h-4 w-4" strokeWidth={1.8} aria-hidden />}
                 </span>
                 <span className="absolute right-4 text-[0.5rem] text-gold-light/70" aria-hidden>
@@ -165,7 +175,9 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
           {activeTab === 'pay' && (
             <div className="rounded-xl border border-sage-pale/70 bg-white p-4 text-center">
               <h3 className="mb-4 font-thai text-sm font-semibold text-teal-dark">
-                {config.bankAccountNumber ? 'โอนเข้าบัญชี' : 'โอนผ่าน PromptPay'}
+                {config.bankAccountNumber
+                  ? messages.rsvpDeclined.transferBank
+                  : messages.rsvpDeclined.transferPromptpay}
               </h3>
 
               <div className="mb-4 inline-block rounded-xl border-2 border-sage-pale p-4">
@@ -180,7 +192,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                   />
                 ) : (
                   <div className="flex h-[140px] w-[140px] items-center justify-center rounded-lg bg-sage-pale/30 p-3 text-center text-xs text-text-light">
-                    ยังไม่มี QR Code
+                    {messages.rsvpDeclined.noQr}
                   </div>
                 )}
               </div>
@@ -195,7 +207,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                   </p>
                   {config.bankAccountName && (
                     <p className="mt-1 font-thai text-xs text-text-light">
-                      ชื่อบัญชี: {config.bankAccountName}
+                      {messages.rsvpDeclined.accountName}: {config.bankAccountName}
                     </p>
                   )}
                   <button
@@ -206,12 +218,12 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                     {copied === 'bank' ? (
                       <>
                         <Check className="h-4 w-4" strokeWidth={2} aria-hidden />
-                        คัดลอกแล้ว!
+                        {messages.rsvpDeclined.copied}
                       </>
                     ) : (
                       <>
                         <Clipboard className="h-4 w-4" strokeWidth={1.6} aria-hidden />
-                        คัดลอกเลขบัญชี
+                        {messages.rsvpDeclined.copyAccount}
                       </>
                     )}
                   </button>
@@ -223,7 +235,8 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                       {config.promptpay}
                     </p>
                     <p className="mt-1 font-thai text-xs text-text-light">
-                      ชื่อบัญชี: {config.bankAccountName || config.promptpayName}
+                      {messages.rsvpDeclined.accountName}:{' '}
+                      {config.bankAccountName || config.promptpayName}
                     </p>
                     <button
                       type="button"
@@ -233,12 +246,12 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
                       {copied === 'pp' ? (
                         <>
                           <Check className="h-4 w-4" strokeWidth={2} aria-hidden />
-                          คัดลอกแล้ว!
+                          {messages.rsvpDeclined.copied}
                         </>
                       ) : (
                         <>
                           <Clipboard className="h-4 w-4" strokeWidth={1.6} aria-hidden />
-                          คัดลอกเบอร์
+                          {messages.rsvpDeclined.copyPhone}
                         </>
                       )}
                     </button>
@@ -247,7 +260,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
               )}
 
               <p className="mt-3 font-thai text-[0.72rem] leading-relaxed text-text-light">
-                ช่วยค่างานเป็นการร่วมสมทบตามสะดวก ไม่มีขั้นต่ำค่ะ
+                {messages.rsvpDeclined.payNote}
               </p>
             </div>
           )}
@@ -259,7 +272,7 @@ export function StepDeclined({ guestName, onClose }: StepDeclinedProps) {
             onClick={onClose}
             className="font-thai text-sm text-text-light/80 transition-colors hover:text-text-light"
           >
-            เสร็จแล้ว / ปิด
+            {messages.rsvpDeclined.done}
           </button>
         </>
       )}

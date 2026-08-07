@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Tags } from 'lucide-react';
 import { createAdminGuest, getAdminGuestCategories } from '@/lib/api';
 import { AdminSelect } from '@/components/admin/AdminSelect';
-import type { GuestCategory } from '@/types';
+import type { GuestCategory, InviteLocale } from '@/types';
 
 function getToken(): string {
   const match = document.cookie.match(/admin-token=([^;]+)/);
@@ -18,6 +18,7 @@ interface AddGuestFormProps {
 export function AddGuestForm({ onCreated }: AddGuestFormProps) {
   const [displayName, setDisplayName] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [locale, setLocale] = useState<InviteLocale>('TH');
   const [categories, setCategories] = useState<GuestCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,9 +47,11 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
       await createAdminGuest(getToken(), {
         displayName: displayName.trim(),
         categoryId,
+        locale,
       });
       setDisplayName('');
       setCategoryId('');
+      setLocale('TH');
       setSuccess('สร้างลิงก์เชิญเรียบร้อยแล้ว');
       onCreated();
     } catch (err) {
@@ -73,7 +76,7 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
         สร้างการ์ดเชิญใหม่
       </h3>
       <p className="mt-1 text-[0.8rem] text-[#8a8a8a]">
-        กรอกชื่อที่ต้องการแสดงบนการ์ด และเลือกประเภทแขก ระบบจะสร้างลิงก์เฉพาะให้แต่ละคน
+        กรอกชื่อที่ต้องการแสดงบนการ์ด เลือกประเภทแขก และภาษาการ์ด ระบบจะสร้างลิงก์เฉพาะให้แต่ละคน
       </p>
 
       <div className="mt-4 flex flex-col gap-3">
@@ -103,6 +106,21 @@ export function AddGuestForm({ onCreated }: AddGuestFormProps) {
             leadingIcon={Tags}
             disabled={loading || categories.length === 0}
             className="sm:flex-1"
+          />
+
+          <AdminSelect
+            value={locale}
+            onChange={(value) => {
+              setLocale(value as InviteLocale);
+              setError('');
+              setSuccess('');
+            }}
+            options={[
+              { value: 'TH', label: 'การ์ดภาษาไทย' },
+              { value: 'EN', label: 'English card' },
+            ]}
+            disabled={loading}
+            className="sm:w-44"
           />
 
           <button

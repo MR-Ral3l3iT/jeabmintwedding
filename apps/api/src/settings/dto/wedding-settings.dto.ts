@@ -77,6 +77,15 @@ export class WeddingSettingsResponseDto {
   @ApiPropertyOptional()
   paymentQrUrl?: string;
 
+  @ApiPropertyOptional({ description: 'แนะนำตัวเจ้าบ่าว (สำหรับบอท)' })
+  groomBio?: string;
+
+  @ApiPropertyOptional({ description: 'แนะนำตัวเจ้าสาว (สำหรับบอท)' })
+  brideBio?: string;
+
+  @ApiPropertyOptional({ description: 'ความรู้เพิ่มเติมสำหรับบอทตอบแขก' })
+  botKnowledge?: string;
+
   @ApiProperty({ type: [TimelineItemDto] })
   timeline: TimelineItemDto[];
 
@@ -191,4 +200,19 @@ export class UpdateWeddingSettingsDto {
   @ValidateNested({ each: true })
   @Type(() => TimelineItemDto)
   timeline?: TimelineItemDto[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  groomBio?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  brideBio?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  botKnowledge?: string;
 }

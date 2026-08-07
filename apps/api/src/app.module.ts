@@ -5,8 +5,19 @@ import { RsvpModule } from './rsvp/rsvp.module';
 import { AdminModule } from './admin/admin.module';
 import { InviteModule } from './invite/invite.module';
 import { SettingsModule } from './settings/settings.module';
+import { LineModule } from './line/line.module';
+import { JoinModule } from './join/join.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, RsvpModule, AdminModule, InviteModule, SettingsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    RsvpModule,
+    AdminModule,
+    InviteModule,
+    SettingsModule,
+    LineModule,
+    JoinModule,
+  ],
 })
 export class AppModule {}

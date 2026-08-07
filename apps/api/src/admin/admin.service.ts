@@ -18,6 +18,11 @@ import {
   GuestCategoryResponseDto,
   UpdateGuestCategoryDto,
 } from './dto/guest-category.dto';
+import {
+  GetLineFriendsQueryDto,
+  LineFriendResponseDto,
+  LinkLineFriendDto,
+} from './dto/line-friend.dto';
 
 function generateInviteToken(): string {
   return randomBytes(16).toString('hex');
@@ -32,11 +37,14 @@ export class AdminService {
     displayName: string | null;
     name: string | null;
     categoryId: string | null;
+    partySide: 'GROOM' | 'BRIDE' | null;
+    locale: 'TH' | 'EN';
     attending: boolean | null;
     attendeeCount: number | null;
     createdAt: Date;
     rsvpAt: Date | null;
     inviteToken: string | null;
+    lineUserId: string | null;
     category?: { name: string } | null;
     wish?: { message: string } | null;
   }): GuestResponseDto {
@@ -46,11 +54,14 @@ export class AdminService {
       name: g.name ?? undefined,
       categoryId: g.categoryId ?? undefined,
       categoryName: g.category?.name,
+      partySide: g.partySide ?? undefined,
+      locale: g.locale,
       attending: g.attending ?? undefined,
       attendeeCount: g.attendeeCount ?? undefined,
       createdAt: g.createdAt,
       rsvpAt: g.rsvpAt ?? undefined,
       inviteToken: g.inviteToken ?? undefined,
+      lineUserId: g.lineUserId ?? undefined,
       wishMessage: g.wish?.message,
     };
   }
@@ -60,11 +71,14 @@ export class AdminService {
     displayName: true,
     name: true,
     categoryId: true,
+    partySide: true,
+    locale: true,
     attending: true,
     attendeeCount: true,
     createdAt: true,
     rsvpAt: true,
     inviteToken: true,
+    lineUserId: true,
     category: { select: { name: true } },
     wish: { select: { message: true } },
   } as const;
@@ -218,6 +232,7 @@ export class AdminService {
           data: {
             displayName: dto.displayName.trim(),
             categoryId: dto.categoryId,
+            locale: dto.locale ?? 'TH',
             inviteToken,
           },
           select: this.guestSelect,
@@ -254,6 +269,9 @@ export class AdminService {
       where: { id },
       data: {
         ...(dto.displayName !== undefined && { displayName: dto.displayName.trim() }),
+        ...(dto.name !== undefined && { name: dto.name.trim() }),
+        ...(dto.partySide !== undefined && { partySide: dto.partySide }),
+        ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
       },
       select: this.guestSelect,
@@ -314,5 +332,112 @@ export class AdminService {
       guestName: w.guest.name ?? w.guest.displayName ?? 'ไม่ระบุชื่อ',
       createdAt: w.createdAt,
     }));
+  }
+
+  async getLineFriends(query: GetLineFriendsQueryDto = {}): Promise<LineFriendResponseDto[]> {
+    const linked = query.linked ?? 'all';
+    const rows = await this.prisma.lineFriend.findMany({
+      where: {
+        ...(linked === 'linked' && { guestId: { not: null } }),
+        ...(linked === 'unlinked' && { guestId: null }),
+      },
+      include: {
+        guest: { select: { displayName: true, name: true, partySide: true } },
+      },
+      orderBy: [{ followedAt: 'desc' }],
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      lineUserId: row.lineUserId,
+      displayName: row.displayName ?? undefined,
+      pictureUrl: row.pictureUrl ?? undefined,
+      followedAt: row.followedAt,
+      unfollowedAt: row.unfollowedAt ?? undefined,
+      guestId: row.guestId ?? undefined,
+      guestDisplayName: row.guest?.displayName ?? row.guest?.name ?? undefined,
+      guestName: row.guest?.name ?? undefined,
+      guestPartySide: row.guest?.partySide ?? undefined,
+      isFollowing: row.unfollowedAt == null,
+    }));
+  }
+
+  async linkLineFriend(id: string, dto: LinkLineFriendDto): Promise<LineFriendResponseDto> {
+    const friend = await this.prisma.lineFriend.findUnique({ where: { id } });
+    if (!friend) {
+      throw new NotFoundException('ไม่พบรายชื่อ LINE');
+    }
+
+    const guest = await this.prisma.guest.findUnique({ where: { id: dto.guestId } });
+    if (!guest) {
+      throw new NotFoundException('ไม่พบแขก');
+    }
+
+    if (guest.lineUserId && guest.lineUserId !== friend.lineUserId) {
+      throw new BadRequestException('แขกคนนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้ว');
+    }
+
+    const otherLink = await this.prisma.lineFriend.findFirst({
+      where: { guestId: guest.id, NOT: { id } },
+    });
+    if (otherLink) {
+      throw new BadRequestException('แขกคนนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้ว');
+    }
+
+    // Clear previous guest mirror if re-linking this LINE account
+    if (friend.guestId && friend.guestId !== guest.id) {
+      await this.prisma.guest.update({
+        where: { id: friend.guestId },
+        data: { lineUserId: null },
+      });
+    }
+
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.lineFriend.update({
+        where: { id },
+        data: { guestId: guest.id },
+        include: { guest: { select: { displayName: true, name: true, partySide: true } } },
+      }),
+      this.prisma.guest.update({
+        where: { id: guest.id },
+        data: { lineUserId: friend.lineUserId },
+      }),
+    ]);
+
+    return {
+      id: updated.id,
+      lineUserId: updated.lineUserId,
+      displayName: updated.displayName ?? undefined,
+      pictureUrl: updated.pictureUrl ?? undefined,
+      followedAt: updated.followedAt,
+      unfollowedAt: updated.unfollowedAt ?? undefined,
+      guestId: updated.guestId ?? undefined,
+      guestDisplayName: updated.guest?.displayName ?? updated.guest?.name ?? undefined,
+      guestName: updated.guest?.name ?? undefined,
+      guestPartySide: updated.guest?.partySide ?? undefined,
+      isFollowing: updated.unfollowedAt == null,
+    };
+  }
+
+  async unlinkLineFriend(id: string): Promise<void> {
+    const friend = await this.prisma.lineFriend.findUnique({ where: { id } });
+    if (!friend) {
+      throw new NotFoundException('ไม่พบรายชื่อ LINE');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.lineFriend.update({
+        where: { id },
+        data: { guestId: null },
+      }),
+      ...(friend.guestId
+        ? [
+            this.prisma.guest.update({
+              where: { id: friend.guestId },
+              data: { lineUserId: null },
+            }),
+          ]
+        : []),
+    ]);
   }
 }

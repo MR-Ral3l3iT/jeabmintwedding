@@ -1,11 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Clock, Home, LogOut, Mail, Users } from 'lucide-react';
+import { Clock, Home, LogOut, Mail, MessageCircle, Users } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-export type AdminTab = 'dashboard' | 'guests' | 'wishes' | 'info';
+export type AdminTab = 'dashboard' | 'guests' | 'wishes' | 'line' | 'info';
 
 interface AdminHeaderProps {
   activeTab?: AdminTab;
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/admin', label: 'Dashboard', key: 'dashboard' as const, icon: Home },
   { href: '/admin/guests', label: 'รายชื่อแขก', key: 'guests' as const, icon: Users },
   { href: '/admin/wishes', label: 'คำอวยพร', key: 'wishes' as const, icon: Mail },
+  { href: '/admin/line', label: 'ผูก LINE', key: 'line' as const, icon: MessageCircle },
   { href: '/admin/info', label: 'ข้อมูลงาน', key: 'info' as const, icon: Clock },
 ] as const;
 

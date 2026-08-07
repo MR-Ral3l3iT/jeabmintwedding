@@ -130,6 +130,9 @@ export function EventInfoEditor() {
         bankAccountNumber: form.bankAccountNumber,
         bankAccountName: accountName || undefined,
         timeline: form.timeline.filter((t) => t.time.trim() && t.event.trim()),
+        groomBio: form.groomBio,
+        brideBio: form.brideBio,
+        botKnowledge: form.botKnowledge,
       });
       setForm(updated);
       setSuccess('บันทึกข้อมูลเรียบร้อยแล้ว');
@@ -210,6 +213,22 @@ export function EventInfoEditor() {
             />
           </Field>
         </div>
+        <Field label="แนะนำตัวเจ้าสาว (สำหรับบอท LINE)">
+          <textarea
+            className={`${inputClass} min-h-[88px] resize-y`}
+            value={form.brideBio ?? ''}
+            onChange={(e) => updateField('brideBio', e.target.value)}
+            placeholder="เช่น ชอบทำขนม ทำงานด้าน..."
+          />
+        </Field>
+        <Field label="แนะนำตัวเจ้าบ่าว (สำหรับบอท LINE)">
+          <textarea
+            className={`${inputClass} min-h-[88px] resize-y`}
+            value={form.groomBio ?? ''}
+            onChange={(e) => updateField('groomBio', e.target.value)}
+            placeholder="เช่น ชอบถ่ายรูป ทำงานด้าน..."
+          />
+        </Field>
       </SectionCard>
 
       <SectionCard title="วันและสถานที่">
@@ -321,6 +340,20 @@ export function EventInfoEditor() {
           <Plus className="h-4 w-4" />
           เพิ่มรายการ
         </button>
+      </SectionCard>
+
+      <SectionCard title="ความรู้สำหรับบอท LINE">
+        <Field label="FAQ / ข้อมูลที่บอทใช้ตอบแขก">
+          <textarea
+            className={`${inputClass} min-h-[140px] resize-y`}
+            value={form.botKnowledge ?? ''}
+            onChange={(e) => updateField('botKnowledge', e.target.value)}
+            placeholder={`เช่น\n- Dress code: โทนเขียว/ครีม\n- ที่จอดรถ: หน้าอาคาร...\n- ของขวัญ: ตามสะดวก ไม่มีขั้นต่ำ`}
+          />
+        </Field>
+        <p className="text-[0.72rem] text-[#8a8a8a]">
+          บอทจะดึงข้อมูลวันงาน สถานที่ กำหนดการจากหน้านี้ รวมกับข้อความด้านบนเมื่อตอบคำถามใน LINE OA
+        </p>
       </SectionCard>
 
       <SectionCard title="การชำระเงิน / ช่วยงาน">

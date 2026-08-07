@@ -7,7 +7,7 @@ import { StepOne } from './StepOne';
 import { StepAttending } from './StepAttending';
 import { StepDeclined } from './StepDeclined';
 import { submitRsvp } from '@/lib/api';
-import { useInvite } from '@/components/invite/InviteContext';
+import { useInvite, useInviteMessages } from '@/components/invite/InviteContext';
 import { ASSETS } from '@/lib/constants';
 
 type Step = 'step1' | 'attending' | 'declined';
@@ -37,6 +37,7 @@ function ModalFlorals() {
 
 export function RsvpModal() {
   const { inviteToken, invite, showNameHints, markRsvpComplete } = useInvite();
+  const messages = useInviteMessages();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>('step1');
@@ -119,7 +120,7 @@ export function RsvpModal() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="ตอบรับหรือฝากคำอวยพร"
+        aria-label={messages.rsvpModal.aria}
         className="absolute left-1/2 top-1/2 box-border w-[min(calc(100vw-2rem),28rem)] min-w-0 max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 animate-[rsvpModalIn_0.35s_ease-out]"
       >
         <style>{`
@@ -136,7 +137,7 @@ export function RsvpModal() {
             <button
               onClick={handleClose}
               className="absolute right-3 top-3 z-20 shrink-0 text-text-light transition-colors hover:text-text"
-              aria-label="ปิด"
+              aria-label={messages.rsvpModal.close}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -144,11 +145,13 @@ export function RsvpModal() {
             <div className="min-w-0">
               {alreadyRsvp ? (
                 <div className="text-center">
-                  <h2 className="mb-2 font-display text-[1.75rem] text-teal-dark">ตอบรับแล้วค่ะ</h2>
+                  <h2 className="mb-2 font-display text-[1.75rem] text-teal-dark">
+                    {messages.rsvpModal.alreadyTitle}
+                  </h2>
                   <p className="text-sm text-text-light">
                     {invite?.attending
-                      ? 'ขอบคุณที่ยืนยันเข้าร่วมงานนะคะ 💚'
-                      : 'ขอบคุณที่แจ้งให้ทราบนะคะ 🌿'}
+                      ? messages.rsvpModal.alreadyAttending
+                      : messages.rsvpModal.alreadyDeclined}
                   </p>
                 </div>
               ) : (

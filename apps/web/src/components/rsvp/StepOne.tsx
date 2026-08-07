@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Gem, Heart, Leaf, User } from 'lucide-react';
+import { useInviteMessages } from '@/components/invite/InviteContext';
 
 interface StepOneProps {
   defaultName?: string;
@@ -26,13 +27,14 @@ export function StepOne({
   showNameHint = false,
   onChoose,
 }: StepOneProps) {
+  const messages = useInviteMessages();
   const [name, setName] = useState(defaultName);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleChoose(attending: boolean) {
     if (!name.trim()) {
-      setError('กรุณากรอกชื่อก่อนนะคะ');
+      setError(messages.rsvpStep1.nameRequired);
       return;
     }
     setError('');
@@ -47,7 +49,9 @@ export function StepOne({
   return (
     <div className="min-w-0 text-center">
       <Gem className="mx-auto mb-1 h-6 w-6 text-gold" strokeWidth={1.5} aria-hidden />
-      <h2 className="font-display text-[1.85rem] leading-tight text-teal-dark">แล้วพบกันนะคะ</h2>
+      <h2 className="font-display text-[1.85rem] leading-tight text-teal-dark">
+        {messages.rsvpStep1.title}
+      </h2>
 
       <GoldDivider />
 
@@ -69,7 +73,7 @@ export function StepOne({
           <div className="rounded-xl border border-sage-pale/70 bg-[#F3EDE4] px-3.5 py-3 text-left">
             <label className="mb-1.5 flex items-center gap-2 font-thai text-sm font-semibold text-teal-dark">
               <User className="h-4 w-4 text-gold" strokeWidth={1.6} aria-hidden />
-              ชื่อของท่าน
+              {messages.rsvpStep1.nameLabel}
             </label>
             <input
               type="text"
@@ -78,7 +82,7 @@ export function StepOne({
                 setName(e.target.value);
                 setError('');
               }}
-              placeholder="ชื่อของท่าน *"
+              placeholder={messages.rsvpStep1.namePlaceholder}
               className={[
                 'box-border w-full max-w-full rounded-lg border bg-white px-3 py-2.5 font-thai text-sm text-text',
                 'outline-none transition-colors focus:border-sage',
@@ -101,7 +105,7 @@ export function StepOne({
         >
           <Leaf className="absolute left-3 h-3 w-3 opacity-55 sm:left-4 sm:h-3.5 sm:w-3.5" strokeWidth={1.5} aria-hidden />
           <Heart className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden />
-          <span className="min-w-0">ยินดีเข้าร่วมงาน</span>
+          <span className="min-w-0">{messages.rsvpStep1.attend}</span>
           <Leaf className="absolute right-3 h-3 w-3 scale-x-[-1] opacity-55 sm:right-4 sm:h-3.5 sm:w-3.5" strokeWidth={1.5} aria-hidden />
         </button>
         <button
@@ -110,7 +114,7 @@ export function StepOne({
           className="relative flex w-full min-w-0 items-center justify-center gap-1.5 rounded-full border border-teal-dark/25 bg-white px-3 py-3 font-thai text-[0.82rem] font-medium text-teal-dark transition-all hover:bg-sage-pale/40 disabled:opacity-50 sm:px-4 sm:text-sm"
         >
           <Heart className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden />
-          <span className="min-w-0">ไม่สะดวกมาร่วมงาน</span>
+          <span className="min-w-0">{messages.rsvpStep1.decline}</span>
         </button>
       </div>
 
@@ -118,12 +122,15 @@ export function StepOne({
 
       <div className="space-y-3 font-thai text-xs leading-relaxed text-text-light">
         <p>
-          การตอบรับของคุณ
-          <br />
-          จะช่วยให้เราจัดเตรียมงานได้อย่างเหมาะสม
+          {messages.rsvpStep1.helpPrepare.split('\n').map((line, i, arr) => (
+            <span key={i}>
+              {line}
+              {i < arr.length - 1 ? <br /> : null}
+            </span>
+          ))}
         </p>
         <p className="font-thai text-sm font-semibold leading-relaxed text-teal-dark">
-          ขอบคุณที่เป็นส่วนหนึ่งของวันสำคัญของเราค่ะ{' '}
+          {messages.rsvpStep1.thankYou}{' '}
           <Heart className="inline h-3.5 w-3.5 align-[-2px] text-gold" strokeWidth={1.8} aria-hidden />
         </p>
       </div>

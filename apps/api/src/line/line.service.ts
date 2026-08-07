@@ -3,6 +3,7 @@ import { validateSignature, messagingApi, webhook } from '@line/bot-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SettingsService } from '@/settings/settings.service';
+import { BotStudioService } from '@/bot-studio/bot-studio.service';
 
 const LINK_PATTERNS = [
   /^ผูก\s+([a-zA-Z0-9]+)$/i,
@@ -21,6 +22,7 @@ export class LineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
+    private readonly botStudioService: BotStudioService,
   ) {
     const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? '';
     this.channelSecret = process.env.LINE_CHANNEL_SECRET ?? '';
@@ -191,11 +193,15 @@ export class LineService {
   }
 
   private async generateBotReply(lineUserId: string, question: string): Promise<string> {
-    const settings = await this.settingsService.getSettings();
-    const friend = await this.prisma.lineFriend.findUnique({
-      where: { lineUserId },
-      include: { guest: { select: { displayName: true, name: true } } },
-    });
+    const [settings, persona, topics, friend] = await Promise.all([
+      this.settingsService.getSettings(),
+      this.botStudioService.getPersona(),
+      this.botStudioService.listTopics(),
+      this.prisma.lineFriend.findUnique({
+        where: { lineUserId },
+        include: { guest: { select: { displayName: true, name: true } } },
+      }),
+    ]);
 
     if (!this.gemini) {
       return (
@@ -212,6 +218,10 @@ export class LineService {
       .map((item) => `- ${item.time} ${item.event}`)
       .join('\n');
 
+    const topicKnowledge = topics
+      .map((topic) => `### ${topic.title}\n${topic.body}`)
+      .join('\n\n');
+
     const knowledge = [
       `งานแต่ง: ${settings.brideNickname} & ${settings.groomNickname}`,
       `เจ้าสาว: ${settings.brideName} (ชื่อเล่น ${settings.brideNickname})`,
@@ -226,15 +236,22 @@ export class LineService {
       `เบอร์ติดต่อ: ${settings.rsvpContactPhone}`,
       `LINE OA: ${settings.lineOaId}`,
       timeline ? `กำหนดการ:\n${timeline}` : '',
-      settings.botKnowledge ? `ข้อมูลเพิ่มเติมสำหรับตอบแขก:\n${settings.botKnowledge}` : '',
+      topicKnowledge ? `ความรู้เพิ่มเติมจาก Bot Studio:\n${topicKnowledge}` : '',
+      settings.botKnowledge
+        ? `ข้อมูลเพิ่มเติม (legacy):\n${settings.botKnowledge}`
+        : '',
     ]
       .filter(Boolean)
       .join('\n');
 
-    const system = `คุณเป็นผู้ช่วยงานแต่งงานของ ${settings.brideNickname} และ ${settings.groomNickname}
-ตอบเป็นภาษาไทย สุภาพ อบอุ่น สั้นกระชับ (ไม่เกิน 500 ตัวอักษร)
-ตอบเฉพาะเรื่องงานแต่งนี้เท่านั้น ห้ามแต่งข้อมูลที่ไม่มีในบริบท
-ถ้าไม่รู้คำตอบ ให้แนะนำติดต่อเบอร์ ${settings.rsvpContactPhone} หรือ LINE ${settings.lineOaId}
+    const maxLen = persona.maxLength || 500;
+    const system = `คุณคือ ${persona.displayName} ผู้ช่วยงานแต่งของ ${settings.brideNickname} และ ${settings.groomNickname}
+โทนการพูด: ${persona.tone}
+ภาษา: ${persona.languageNote}
+ความยาว: สั้นกระชับ ไม่เกิน ${maxLen} ตัวอักษร
+สิ่งที่ห้ามทำ: ${persona.doNotDo}
+เมื่อไม่รู้คำตอบ: ${persona.whenUnknown}
+ติดต่อสำรอง: เบอร์ ${settings.rsvpContactPhone} หรือ LINE ${settings.lineOaId}
 ชื่อผู้ถาม: ${guestName}`;
 
     try {
@@ -245,10 +262,17 @@ export class LineService {
         { text: `คำถามจากแขก: ${question}` },
       ]);
       const text = result.response.text()?.trim();
+      const usage = result.response.usageMetadata;
+      await this.botStudioService.logGeminiReply({
+        promptTokens: usage?.promptTokenCount ?? null,
+        completionTokens: usage?.candidatesTokenCount ?? null,
+        totalTokens: usage?.totalTokenCount ?? null,
+        meta: { model: 'gemini-2.0-flash' },
+      });
       if (!text) {
         return `ขออภัยค่ะ ตอบไม่สำเร็จ ลองถามใหม่หรือติดต่อ ${settings.rsvpContactPhone} ได้ค่ะ`;
       }
-      return text.slice(0, 900);
+      return text.slice(0, Math.min(900, Math.max(maxLen, 100)));
     } catch (error) {
       this.logger.error('Gemini reply failed', error);
       return `ขออภัยค่ะ ระบบตอบข้อความขัดข้องชั่วคราว ติดต่อ ${settings.rsvpContactPhone} ได้ค่ะ`;

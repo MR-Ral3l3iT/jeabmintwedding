@@ -16,6 +16,12 @@ import type {
   Stats,
   WeddingSettings,
   UpdateWeddingSettingsPayload,
+  BotPersona,
+  UpdateBotPersonaPayload,
+  BotKnowledgeTopic,
+  BotBasicsPreview,
+  BotLineUsage,
+  BotGeminiUsage,
 } from '@/types';
 
 function formatValidationString(raw: string): string {
@@ -323,4 +329,119 @@ export async function uploadPaymentQr(
   }
 
   return res.json() as Promise<WeddingSettings>;
+}
+
+/* ─── Bot Studio (cookie session, credentials: include) ─── */
+
+async function botStudioRequest<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
+  const res = await fetch(`${API_URL}/api/bot-studio${path}`, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options?.headers ?? {}),
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: 'เกิดข้อผิดพลาด' }));
+    let message = formatApiErrorMessage(error.message ?? error);
+    if (res.status === 401) {
+      message = 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่';
+    }
+    throw new Error(message);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export async function botStudioLogin(password: string): Promise<{ ok: boolean }> {
+  return botStudioRequest<{ ok: boolean }>('/login', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function botStudioLogout(): Promise<{ ok: boolean }> {
+  return botStudioRequest<{ ok: boolean }>('/logout', { method: 'POST' });
+}
+
+export async function botStudioCheckSession(): Promise<boolean> {
+  try {
+    await botStudioRequest<{ ok: boolean }>('/session');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getBotPersona(): Promise<BotPersona> {
+  return botStudioRequest<BotPersona>('/persona');
+}
+
+export async function updateBotPersona(
+  payload: UpdateBotPersonaPayload,
+): Promise<BotPersona> {
+  return botStudioRequest<BotPersona>('/persona', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function listBotTopics(): Promise<BotKnowledgeTopic[]> {
+  return botStudioRequest<BotKnowledgeTopic[]>('/topics');
+}
+
+export async function createBotTopic(payload: {
+  title: string;
+  body: string;
+}): Promise<BotKnowledgeTopic> {
+  return botStudioRequest<BotKnowledgeTopic>('/topics', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateBotTopic(
+  id: string,
+  payload: { title?: string; body?: string; sortOrder?: number },
+): Promise<BotKnowledgeTopic> {
+  return botStudioRequest<BotKnowledgeTopic>(`/topics/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteBotTopic(id: string): Promise<{ ok: boolean }> {
+  return botStudioRequest<{ ok: boolean }>(`/topics/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function reorderBotTopics(
+  items: { id: string; sortOrder: number }[],
+): Promise<BotKnowledgeTopic[]> {
+  return botStudioRequest<BotKnowledgeTopic[]>('/topics/reorder', {
+    method: 'PATCH',
+    body: JSON.stringify({ items }),
+  });
+}
+
+export async function getBotBasics(): Promise<BotBasicsPreview> {
+  return botStudioRequest<BotBasicsPreview>('/basics');
+}
+
+export async function getBotLineUsage(): Promise<BotLineUsage> {
+  return botStudioRequest<BotLineUsage>('/usage/line');
+}
+
+export async function getBotGeminiUsage(): Promise<BotGeminiUsage> {
+  return botStudioRequest<BotGeminiUsage>('/usage/gemini');
 }

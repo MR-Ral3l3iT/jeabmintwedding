@@ -144,6 +144,82 @@ export type UpdateWeddingSettingsPayload = Partial<
   timeline?: TimelineItem[];
 };
 
+/* ─── Bot Studio ─── */
+
+export interface BotPersona {
+  id: string;
+  displayName: string;
+  tone: string;
+  languageNote: string;
+  maxLength: number;
+  doNotDo: string;
+  whenUnknown: string;
+  updatedAt: string;
+}
+
+export type UpdateBotPersonaPayload = Omit<BotPersona, 'id' | 'updatedAt'>;
+
+export interface BotKnowledgeTopic {
+  id: string;
+  title: string;
+  body: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BotBasicsPreview {
+  brideName: string;
+  brideNickname: string;
+  groomName: string;
+  groomNickname: string;
+  brideBio?: string;
+  groomBio?: string;
+  weddingDate: string;
+  venue: string;
+  city: string;
+  mapsUrl: string;
+  rsvpDeadline: string;
+  rsvpContactPhone: string;
+  lineOaId: string;
+  timeline: TimelineItem[];
+  legacyBotKnowledge: string | null;
+}
+
+export interface BotLineUsage {
+  configured: boolean;
+  error: string | null;
+  type: string | null;
+  limit: number | null;
+  used: number | null;
+  remaining: number | null;
+}
+
+export interface BotGeminiUsage {
+  today: {
+    replies: number;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  month: {
+    replies: number;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
+  recent: Array<{
+    id: string;
+    promptTokens: number | null;
+    completionTokens: number | null;
+    totalTokens: number | null;
+    createdAt: string;
+    meta?: unknown;
+  }>;
+  billingNote: string;
+  aiStudioUsageUrl: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;

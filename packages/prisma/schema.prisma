@@ -128,3 +128,45 @@ model WeddingSettings {
 
   @@map("wedding_settings")
 }
+
+/// บุคลิกบอท LINE (แก้ได้ที่ Bot Studio เท่านั้น)
+model BotPersona {
+  id           String   @id @default("default")
+  displayName  String   @map("display_name") @db.VarChar(100)
+  tone         String   @db.Text
+  languageNote String   @map("language_note") @db.Text
+  maxLength    Int      @default(500) @map("max_length")
+  doNotDo      String   @map("do_not_do") @db.Text
+  whenUnknown  String   @map("when_unknown") @db.Text
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("bot_personas")
+}
+
+/// หัวข้อความรู้บอท (เพิ่ม/ลบได้ที่ Bot Studio)
+model BotKnowledgeTopic {
+  id        String   @id @default(cuid())
+  title     String   @db.VarChar(200)
+  body      String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([sortOrder])
+  @@map("bot_knowledge_topics")
+}
+
+/// บันทึกการใช้ Gemini / snapshot อื่นๆ
+model BotUsageLog {
+  id               String   @id @default(cuid())
+  provider         String   @db.VarChar(30)
+  kind             String   @db.VarChar(50)
+  promptTokens     Int?     @map("prompt_tokens")
+  completionTokens Int?     @map("completion_tokens")
+  totalTokens      Int?     @map("total_tokens")
+  meta             Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([provider, createdAt])
+  @@map("bot_usage_logs")
+}

@@ -7,6 +7,7 @@ import { InviteModule } from './invite/invite.module';
 import { SettingsModule } from './settings/settings.module';
 import { LineModule } from './line/line.module';
 import { JoinModule } from './join/join.module';
+import { BotStudioModule } from './bot-studio/bot-studio.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { JoinModule } from './join/join.module';
     SettingsModule,
     LineModule,
     JoinModule,
+    BotStudioModule,
   ],
 })
 export class AppModule {}

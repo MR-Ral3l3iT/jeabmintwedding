@@ -132,7 +132,6 @@ export function EventInfoEditor() {
         timeline: form.timeline.filter((t) => t.time.trim() && t.event.trim()),
         groomBio: form.groomBio,
         brideBio: form.brideBio,
-        botKnowledge: form.botKnowledge,
       });
       setForm(updated);
       setSuccess('บันทึกข้อมูลเรียบร้อยแล้ว');
@@ -340,20 +339,6 @@ export function EventInfoEditor() {
           <Plus className="h-4 w-4" />
           เพิ่มรายการ
         </button>
-      </SectionCard>
-
-      <SectionCard title="ความรู้สำหรับบอท LINE">
-        <Field label="FAQ / ข้อมูลที่บอทใช้ตอบแขก">
-          <textarea
-            className={`${inputClass} min-h-[140px] resize-y`}
-            value={form.botKnowledge ?? ''}
-            onChange={(e) => updateField('botKnowledge', e.target.value)}
-            placeholder={`เช่น\n- Dress code: โทนเขียว/ครีม\n- ที่จอดรถ: หน้าอาคาร...\n- ของขวัญ: ตามสะดวก ไม่มีขั้นต่ำ`}
-          />
-        </Field>
-        <p className="text-[0.72rem] text-[#8a8a8a]">
-          บอทจะดึงข้อมูลวันงาน สถานที่ กำหนดการจากหน้านี้ รวมกับข้อความด้านบนเมื่อตอบคำถามใน LINE OA
-        </p>
       </SectionCard>
 
       <SectionCard title="การชำระเงิน / ช่วยงาน">

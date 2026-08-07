@@ -2,15 +2,17 @@
 
 import { WEDDING } from '@/lib/constants';
 import { FloralDecor } from '@/components/invite/FloralDecor';
-import { useInviteMessages } from '@/components/invite/InviteContext';
+import { useInvite, useInviteMessages } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
 import { MapPin } from 'lucide-react';
 
 export function VenueSection() {
+  const { locale } = useInvite();
   const messages = useInviteMessages();
   const config = useWeddingConfig();
-  const venue = config.venue || WEDDING.venue;
-  const city = config.city || WEDDING.city;
+  const venue =
+    locale === 'EN' ? messages.venue.venueName : config.venue || WEDDING.venue;
+  const city = locale === 'EN' ? messages.venue.city : config.city || WEDDING.city;
   const mapsUrl = config.mapsUrl || WEDDING.mapsUrl;
   const timeline = config.timeline?.length ? config.timeline : WEDDING.timeline;
 

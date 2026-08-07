@@ -29,6 +29,8 @@ export type InviteMessages = {
     eyebrow: string;
     title: string;
     directions: string;
+    venueName: string;
+    city: string;
     timeline: Record<string, string>;
   };
   dress: {

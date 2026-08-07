@@ -93,11 +93,20 @@ export const HERO_GRADIENT =
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
+/** Prefer current browser origin in production admin/client; fall back to build-time SITE_URL. */
+function getSiteOrigin(): string {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  return SITE_URL;
+}
+
 export function getInviteUrl(token: string): string {
-  return `${SITE_URL}/invite/${token}`;
+  return `${getSiteOrigin()}/invite/${token}`;
 }
 
 /** หน้ากลางลงทะเบียนชื่อเรียก + ฝั่ง — มี token = อัปเดตแขก / ไม่มี = ออฟไลน์สร้างใหม่ */
 export function getJoinUrl(token?: string): string {
-  return token ? `${SITE_URL}/join/${token}` : `${SITE_URL}/join`;
+  const origin = getSiteOrigin();
+  return token ? `${origin}/join/${token}` : `${origin}/join`;
 }

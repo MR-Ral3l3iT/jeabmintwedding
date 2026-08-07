@@ -29,6 +29,8 @@ export const th: InviteMessages = {
     eyebrow: 'สถานที่จัดงาน',
     title: 'Gathering',
     directions: 'ดูเส้นทาง',
+    venueName: 'ณ อาคารอเนกประสงค์',
+    city: 'กรมยุทธบริการทหาร, กรุงเทพฯ',
     timeline: {
       '14:00': 'พิธีแห่ขันหมาก',
       '15:30': 'พิธีหลั่งน้ำพระพุทธมนต์',

@@ -240,11 +240,15 @@ export function JoinForm({ token }: JoinFormProps) {
                 [
                   {
                     value: 'GROOM' as const,
-                    label: fillTemplate(messages.join.sideGroomBtn, { name: config.groomNickname }),
+                    label: fillTemplate(messages.join.sideGroomBtn, {
+                      name: messages.join.groomNickname,
+                    }),
                   },
                   {
                     value: 'BRIDE' as const,
-                    label: fillTemplate(messages.join.sideBrideBtn, { name: config.brideNickname }),
+                    label: fillTemplate(messages.join.sideBrideBtn, {
+                      name: messages.join.brideNickname,
+                    }),
                   },
                 ] as const
               ).map((opt) => {

@@ -142,6 +142,8 @@ export const en: InviteMessages = {
     welcome: 'Welcome',
     sideGroom: "Groom's side",
     sideBride: "Bride's side",
+    groomNickname: 'Mint',
+    brideNickname: 'Jeab',
     nextLine: 'Next: add our LINE OA friend, then send the link command',
     addLine: 'Add LINE OA',
     addLineDesc: 'For event updates and venue information',

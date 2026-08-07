@@ -121,6 +121,8 @@ export type InviteMessages = {
     welcome: string;
     sideGroom: string;
     sideBride: string;
+    groomNickname: string;
+    brideNickname: string;
     nextLine: string;
     addLine: string;
     addLineDesc: string;

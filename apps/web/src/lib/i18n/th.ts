@@ -142,6 +142,8 @@ export const th: InviteMessages = {
     welcome: 'ยินดีต้อนรับ',
     sideGroom: 'ฝั่งเจ้าบ่าว',
     sideBride: 'ฝั่งเจ้าสาว',
+    groomNickname: 'มิ้นท์',
+    brideNickname: 'เจี๊ยบ',
     nextLine: 'ขั้นตอนถัดไป: เพิ่มเพื่อน LINE OA แล้วพิมพ์คำสั่งผูกบัญชี',
     addLine: 'เพิ่ม LINE OA',
     addLineDesc: 'เพื่อรับข้อมูลอัปเดตของงาน และแผนผังสถานที่จัดงาน',

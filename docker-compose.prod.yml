@@ -14,7 +14,22 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL}
     ports:
-      - "3001:3001"
+      - "3011:3001"
+    restart: unless-stopped
+    env_file:
+     - .env
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: wedding_postgres
+    environment:
+      POSTGRES_USER: wedding
+      POSTGRES_PASSWORD: wedding
+      POSTGRES_DB: wedding
+    volumes:
+      - wedding_postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
   web:
@@ -28,7 +43,10 @@ services:
     environment:
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "3010:3000"
     depends_on:
       - api
     restart: unless-stopped
+
+volumes:
+  wedding_postgres_data:

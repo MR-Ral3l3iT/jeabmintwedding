@@ -15,3 +15,5 @@ apps/web/public/uploads/*
 
 # Prisma generated
 packages/prisma/generated/
+.env.bak
+.env.*

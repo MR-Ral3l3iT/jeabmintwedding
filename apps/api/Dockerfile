@@ -2,6 +2,7 @@
 #   docker build -f apps/api/Dockerfile .
 
 FROM node:20-alpine AS builder
+RUN apk add --no-cache openssl openssl-dev libc6-compat
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -17,6 +18,7 @@ RUN npm run prisma:generate
 RUN npm run build --workspace=apps/api
 
 FROM node:20-alpine AS production
+RUN apk add --no-cache openssl libc6-compat
 WORKDIR /app
 
 ENV NODE_ENV=production

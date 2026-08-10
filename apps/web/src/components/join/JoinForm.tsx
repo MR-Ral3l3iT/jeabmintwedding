@@ -14,7 +14,7 @@ import { getJoinGuest, submitJoin } from '@/lib/api';
 import { LineLinkHint } from '@/components/invite/LineLinkHint';
 import { InviteProvider } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
-import { HERO_GRADIENT } from '@/lib/constants';
+import { getLiffLinkUrl, HERO_GRADIENT } from '@/lib/constants';
 import {
   fillTemplate,
   getInviteMessages,
@@ -121,6 +121,7 @@ export function JoinForm({ token }: JoinFormProps) {
 
     if (result) {
       const lineUrl = result.lineOaUrl || config.lineOaUrl;
+      const liffUrl = getLiffLinkUrl(result.inviteToken);
       return (
         <Shell>
           <div className="text-center">
@@ -144,29 +145,73 @@ export function JoinForm({ token }: JoinFormProps) {
               {messages.join.nextLine}
             </p>
 
+            {liffUrl ? (
+              <a
+                href={liffUrl}
+                className="mt-4 flex items-center gap-3 rounded-2xl bg-sage p-3.5 text-left shadow-[0_6px_20px_rgba(107,124,94,0.28)] transition-colors hover:bg-teal-dark sm:p-4"
+              >
+                <MessageCircle
+                  className="h-6 w-6 shrink-0 text-gold-light"
+                  strokeWidth={1.6}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-thai text-sm font-semibold text-white">
+                    {messages.join.openLiff}
+                  </p>
+                  <p className="mt-0.5 font-thai text-[0.68rem] leading-relaxed text-white/80">
+                    {messages.join.openLiffDesc}
+                  </p>
+                </div>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
+                  <ChevronRight className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
+                </span>
+              </a>
+            ) : null}
+
             <a
               href={lineUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 flex items-center gap-3 rounded-2xl bg-sage p-3.5 text-left shadow-[0_6px_20px_rgba(107,124,94,0.28)] transition-colors hover:bg-teal-dark sm:p-4"
+              className={
+                liffUrl
+                  ? 'mt-3 flex items-center gap-3 rounded-2xl border border-sage-pale bg-white p-3.5 text-left transition-colors hover:border-sage sm:p-4'
+                  : 'mt-4 flex items-center gap-3 rounded-2xl bg-sage p-3.5 text-left shadow-[0_6px_20px_rgba(107,124,94,0.28)] transition-colors hover:bg-teal-dark sm:p-4'
+              }
             >
               <MessageCircle
-                className="h-6 w-6 shrink-0 text-gold-light"
+                className={`h-6 w-6 shrink-0 ${liffUrl ? 'text-sage' : 'text-gold-light'}`}
                 strokeWidth={1.6}
                 aria-hidden
               />
               <div className="min-w-0 flex-1">
-                <p className="font-thai text-sm font-semibold text-white">{messages.join.addLine}</p>
-                <p className="mt-0.5 font-thai text-[0.68rem] leading-relaxed text-white/80">
+                <p
+                  className={`font-thai text-sm font-semibold ${liffUrl ? 'text-teal-dark' : 'text-white'}`}
+                >
+                  {messages.join.addLine}
+                </p>
+                <p
+                  className={`mt-0.5 font-thai text-[0.68rem] leading-relaxed ${liffUrl ? 'text-text-light' : 'text-white/80'}`}
+                >
                   {messages.join.addLineDesc}
                 </p>
               </div>
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <ChevronRight className="h-4 w-4 text-white" strokeWidth={2} aria-hidden />
+              <span
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${liffUrl ? 'bg-sage-pale' : 'bg-white/20'}`}
+              >
+                <ChevronRight
+                  className={`h-4 w-4 ${liffUrl ? 'text-sage' : 'text-white'}`}
+                  strokeWidth={2}
+                  aria-hidden
+                />
               </span>
             </a>
 
-            <LineLinkHint inviteToken={result.inviteToken} variant="light" />
+            <LineLinkHint
+              inviteToken={result.inviteToken}
+              variant="light"
+              asFallback={Boolean(liffUrl)}
+            />
 
             <div className="mt-5 flex flex-col items-center gap-2">
               <p className="font-thai text-[0.7rem] text-text-light">{messages.join.orScanLine}</p>

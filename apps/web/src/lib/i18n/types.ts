@@ -124,6 +124,8 @@ export type InviteMessages = {
     groomNickname: string;
     brideNickname: string;
     nextLine: string;
+    openLiff: string;
+    openLiffDesc: string;
     addLine: string;
     addLineDesc: string;
     orScanLine: string;
@@ -149,6 +151,7 @@ export type InviteMessages = {
   };
   lineHint: {
     intro: string;
+    fallbackIntro: string;
     copied: string;
     copy: string;
   };

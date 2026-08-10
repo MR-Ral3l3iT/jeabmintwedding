@@ -118,7 +118,7 @@ export class LineService {
     const token = this.extractLinkToken(text);
     if (token) {
       const result = await this.linkByInviteToken(lineUserId, token);
-      await this.reply(event.replyToken, result);
+      await this.reply(event.replyToken, result.message);
       return;
     }
 
@@ -142,24 +142,46 @@ export class LineService {
     return null;
   }
 
-  async linkByInviteToken(lineUserId: string, inviteToken: string): Promise<string> {
+  async linkByInviteToken(
+    lineUserId: string,
+    inviteToken: string,
+  ): Promise<{ ok: boolean; message: string }> {
     const guest = await this.prisma.guest.findUnique({
       where: { inviteToken },
       select: { id: true, displayName: true, name: true, lineUserId: true },
     });
     if (!guest) {
-      return 'ไม่พบรหัสเชิญนี้ค่ะ ตรวจสอบรหัสจากลิงก์การ์ดอีกครั้งนะคะ';
+      return {
+        ok: false,
+        message: 'ไม่พบรหัสเชิญนี้ค่ะ ตรวจสอบรหัสจากลิงก์การ์ดอีกครั้งนะคะ',
+      };
     }
 
     if (guest.lineUserId && guest.lineUserId !== lineUserId) {
-      return 'รายชื่อนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้วค่ะ หากต้องการเปลี่ยน กรุณาติดต่อเจ้าของงาน';
+      return {
+        ok: false,
+        message:
+          'รายชื่อนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้วค่ะ หากต้องการเปลี่ยน กรุณาติดต่อเจ้าของงาน',
+      };
     }
 
     const existingLink = await this.prisma.lineFriend.findFirst({
       where: { guestId: guest.id, NOT: { lineUserId } },
     });
     if (existingLink) {
-      return 'รายชื่อนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้วค่ะ';
+      return {
+        ok: false,
+        message: 'รายชื่อนี้ถูกเชื่อมกับบัญชี LINE อื่นแล้วค่ะ',
+      };
+    }
+
+    // Already linked to this LINE user
+    if (guest.lineUserId === lineUserId) {
+      const label = guest.displayName ?? guest.name ?? 'คุณ';
+      return {
+        ok: true,
+        message: `เชื่อมบัญชีเรียบร้อยแล้วค่ะ 💚\nยินดีต้อนรับ ${label}`,
+      };
     }
 
     const profile = await this.fetchProfile(lineUserId);
@@ -189,7 +211,10 @@ export class LineService {
     ]);
 
     const label = guest.displayName ?? guest.name ?? 'คุณ';
-    return `เชื่อมบัญชีเรียบร้อยแล้วค่ะ 💚\nยินดีต้อนรับ ${label}`;
+    return {
+      ok: true,
+      message: `เชื่อมบัญชีเรียบร้อยแล้วค่ะ 💚\nยินดีต้อนรับ ${label}`,
+    };
   }
 
   private async generateBotReply(lineUserId: string, question: string): Promise<string> {

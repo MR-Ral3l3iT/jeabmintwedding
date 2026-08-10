@@ -7,9 +7,15 @@ import { useInviteMessages } from '@/components/invite/InviteContext';
 interface LineLinkHintProps {
   inviteToken?: string;
   variant?: 'light' | 'dark';
+  /** When LIFF is primary CTA, show softer fallback copy */
+  asFallback?: boolean;
 }
 
-export function LineLinkHint({ inviteToken, variant = 'light' }: LineLinkHintProps) {
+export function LineLinkHint({
+  inviteToken,
+  variant = 'light',
+  asFallback = false,
+}: LineLinkHintProps) {
   const messages = useInviteMessages();
   const [copied, setCopied] = useState(false);
   if (!inviteToken) return null;
@@ -42,7 +48,7 @@ export function LineLinkHint({ inviteToken, variant = 'light' }: LineLinkHintPro
             : 'font-thai text-[0.68rem] leading-relaxed text-text-light'
         }
       >
-        {messages.lineHint.intro}
+        {asFallback ? messages.lineHint.fallbackIntro : messages.lineHint.intro}
       </p>
       <div className="mt-2 flex items-center gap-2">
         <code

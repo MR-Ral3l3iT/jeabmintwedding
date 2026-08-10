@@ -125,6 +125,16 @@ export async function submitJoin(payload: JoinPayload): Promise<JoinResponse> {
   });
 }
 
+export async function linkLineViaLiff(payload: {
+  inviteToken: string;
+  idToken: string;
+}): Promise<{ ok: boolean; message: string }> {
+  return request<{ ok: boolean; message: string }>('/join/link-line', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function adminLogin(payload: LoginPayload): Promise<LoginResponse> {
   return request<LoginResponse>('/auth/login', {
     method: 'POST',

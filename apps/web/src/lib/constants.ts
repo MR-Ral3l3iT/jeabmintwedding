@@ -110,3 +110,10 @@ export function getJoinUrl(token?: string): string {
   const origin = getSiteOrigin();
   return token ? `${origin}/join/${token}` : `${origin}/join`;
 }
+
+/** LIFF deep link for auto-binding guest ↔ LINE after /join */
+export function getLiffLinkUrl(inviteToken: string): string | null {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  if (!liffId) return null;
+  return `https://liff.line.me/${liffId}?token=${encodeURIComponent(inviteToken)}`;
+}

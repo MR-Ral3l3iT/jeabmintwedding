@@ -53,3 +53,24 @@ export class SubmitJoinResponseDto {
   @ApiProperty({ description: 'ลิงก์เพิ่ม LINE OA' })
   lineOaUrl: string;
 }
+
+export class LinkLineDto {
+  @ApiProperty({ description: 'inviteToken ของแขกหลัง join' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(32)
+  inviteToken: string;
+
+  @ApiProperty({ description: 'LINE LIFF ID token' })
+  @IsString()
+  @IsNotEmpty()
+  idToken: string;
+}
+
+export class LinkLineResponseDto {
+  @ApiProperty()
+  ok: boolean;
+
+  @ApiProperty()
+  message: string;
+}

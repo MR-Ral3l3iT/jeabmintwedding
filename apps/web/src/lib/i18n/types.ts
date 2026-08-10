@@ -129,6 +129,8 @@ export type InviteMessages = {
     addLine: string;
     addLineDesc: string;
     orScanLine: string;
+    orScanAddLine: string;
+    fallbackOptions: string;
     formTitle: string;
     formIntro: string;
     forGuest: string;

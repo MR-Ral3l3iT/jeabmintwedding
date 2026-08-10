@@ -15,7 +15,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
       LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN}
+      LINE_LOGIN_CHANNEL_ID: ${LINE_LOGIN_CHANNEL_ID}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      BOT_STUDIO_PASSWORD: ${BOT_STUDIO_PASSWORD}
+      BOT_STUDIO_SECRET: ${BOT_STUDIO_SECRET}
     ports:
       - "3011:3001"
     restart: unless-stopped
@@ -43,6 +46,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+        NEXT_PUBLIC_LIFF_ID: ${NEXT_PUBLIC_LIFF_ID}
     container_name: wedding_web
     environment:
       NODE_ENV: production

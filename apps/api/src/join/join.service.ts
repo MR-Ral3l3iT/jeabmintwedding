@@ -159,6 +159,7 @@ export class JoinService {
     partySide: SubmitJoinDto['partySide'],
     lineOaUrl: string,
   ): Promise<SubmitJoinResponseDto> {
+    await this.ensureOfflineCategory();
     let inviteToken = generateInviteToken();
 
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -169,6 +170,7 @@ export class JoinService {
             name,
             partySide,
             inviteToken,
+            categoryId: 'OFFLINE',
           },
           select: { inviteToken: true, name: true, partySide: true },
         });
@@ -193,6 +195,14 @@ export class JoinService {
     }
 
     throw new BadRequestException('ไม่สามารถสร้างรหัสลงทะเบียนได้ กรุณาลองใหม่');
+  }
+
+  private async ensureOfflineCategory(): Promise<void> {
+    await this.prisma.guestCategory.upsert({
+      where: { id: 'OFFLINE' },
+      create: { id: 'OFFLINE', name: 'ออฟไลน์', sortOrder: 0 },
+      update: {},
+    });
   }
 
   private async getLineOaUrl(): Promise<string> {

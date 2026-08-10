@@ -15,6 +15,7 @@ import { LineLinkHint } from '@/components/invite/LineLinkHint';
 import { InviteProvider } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
 import { getLiffLineMeUrl, getLiffLinkUrl, HERO_GRADIENT } from '@/lib/constants';
+import { persistLiffInviteToken } from '@/lib/liff-token';
 import {
   fillTemplate,
   getInviteMessages,
@@ -88,6 +89,7 @@ export function JoinForm({ token }: JoinFormProps) {
         partySide,
         ...(token && { token }),
       });
+      persistLiffInviteToken(res.inviteToken);
       setResult(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ไม่สามารถบันทึกได้ กรุณาลองใหม่');
@@ -121,8 +123,10 @@ export function JoinForm({ token }: JoinFormProps) {
 
     if (result) {
       const lineUrl = result.lineOaUrl || config.lineOaUrl;
+      // QR: site path (camera → our page → hand off to LINE app)
+      // Button: open LINE LIFF URL directly
       const liffUrl = getLiffLineMeUrl(result.inviteToken) ?? getLiffLinkUrl(result.inviteToken);
-      const qrUrl = getLiffLinkUrl(result.inviteToken) ?? lineUrl;
+      const qrUrl = getLiffLinkUrl(result.inviteToken) ?? liffUrl ?? lineUrl;
       return (
         <Shell>
           <div className="text-center">

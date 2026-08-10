@@ -276,6 +276,13 @@ export async function unlinkAdminLineFriend(token: string, id: string): Promise<
   });
 }
 
+export async function deleteAdminLineFriend(token: string, id: string): Promise<void> {
+  return request<void>(`/admin/line-friends/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export async function deleteAdminGuest(token: string, id: string): Promise<void> {
   return request<void>(`/admin/guests/${id}`, {
     method: 'DELETE',

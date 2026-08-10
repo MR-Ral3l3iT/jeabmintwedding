@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Link2, Link2Off, Loader2, MessageCircle, Pencil, X } from 'lucide-react';
+import { Check, Link2, Link2Off, Loader2, MessageCircle, Pencil, Trash2, X } from 'lucide-react';
 import {
+  deleteAdminLineFriend,
   getAdminGuests,
   getAdminLineFriends,
   linkAdminLineFriend,
@@ -129,6 +130,27 @@ export function LineFriendsPanel() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ยกเลิกไม่สำเร็จ');
+    } finally {
+      setLinkingId(null);
+    }
+  }
+
+  async function handleDelete(friendId: string) {
+    if (
+      !confirm(
+        'ลบรายชื่อ LINE นี้ออกจากระบบ?\nถ้าผูกกับแขกอยู่ จะยกเลิกการผูกด้วย (ไม่ลบรายชื่อแขก)',
+      )
+    ) {
+      return;
+    }
+    setLinkingId(friendId);
+    setError('');
+    try {
+      await deleteAdminLineFriend(getToken(), friendId);
+      cancelEdit();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ลบไม่สำเร็จ');
     } finally {
       setLinkingId(null);
     }
@@ -292,6 +314,15 @@ export function LineFriendsPanel() {
                                         <Link2Off className="h-4 w-4" />
                                       )}
                                     </button>
+                                    <button
+                                      type="button"
+                                      disabled={linkingId === friend.id}
+                                      onClick={() => void handleDelete(friend.id)}
+                                      className="text-[#8a8a8a] transition-colors hover:text-red-500"
+                                      aria-label="ลบ"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
                                   </div>
                                 )}
                               </td>
@@ -389,19 +420,30 @@ export function LineFriendsPanel() {
                                 </span>
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              disabled={linkingId === friend.id}
-                              onClick={() => void handleUnlink(friend.id)}
-                              className="inline-flex items-center gap-1 text-xs text-[#8a8a8a] hover:text-red-500"
-                            >
-                              {linkingId === friend.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Link2Off className="h-3.5 w-3.5" />
-                              )}
-                              ยกเลิกผูก
-                            </button>
+                            <div className="flex shrink-0 flex-col items-end gap-2">
+                              <button
+                                type="button"
+                                disabled={linkingId === friend.id}
+                                onClick={() => void handleUnlink(friend.id)}
+                                className="inline-flex items-center gap-1 text-xs text-[#8a8a8a] hover:text-red-500"
+                              >
+                                {linkingId === friend.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Link2Off className="h-3.5 w-3.5" />
+                                )}
+                                ยกเลิกผูก
+                              </button>
+                              <button
+                                type="button"
+                                disabled={linkingId === friend.id}
+                                onClick={() => void handleDelete(friend.id)}
+                                className="inline-flex items-center gap-1 text-xs text-[#8a8a8a] hover:text-red-500"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                ลบ
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -453,19 +495,31 @@ export function LineFriendsPanel() {
                             placeholder="เลือกแขกที่จะผูก"
                             className="sm:flex-1"
                           />
-                          <button
-                            type="button"
-                            disabled={linkingId === friend.id}
-                            onClick={() => void handleLink(friend.id)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#6b7c5e] px-4 py-3 text-sm font-medium text-white hover:bg-[#1a3228] disabled:opacity-50"
-                          >
-                            {linkingId === friend.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Link2 className="h-4 w-4" />
-                            )}
-                            ผูกบัญชี
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={linkingId === friend.id}
+                              onClick={() => void handleLink(friend.id)}
+                              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#6b7c5e] px-4 py-3 text-sm font-medium text-white hover:bg-[#1a3228] disabled:opacity-50 sm:flex-none"
+                            >
+                              {linkingId === friend.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Link2 className="h-4 w-4" />
+                              )}
+                              ผูกบัญชี
+                            </button>
+                            <button
+                              type="button"
+                              disabled={linkingId === friend.id}
+                              onClick={() => void handleDelete(friend.id)}
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#e5e9e0] px-4 py-3 text-sm text-[#8a8a8a] hover:border-red-200 hover:text-red-500 disabled:opacity-50"
+                              aria-label="ลบ"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              ลบ
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -440,4 +440,23 @@ export class AdminService {
         : []),
     ]);
   }
+
+  async deleteLineFriend(id: string): Promise<void> {
+    const friend = await this.prisma.lineFriend.findUnique({ where: { id } });
+    if (!friend) {
+      throw new NotFoundException('ไม่พบรายชื่อ LINE');
+    }
+
+    await this.prisma.$transaction([
+      ...(friend.guestId
+        ? [
+            this.prisma.guest.update({
+              where: { id: friend.guestId },
+              data: { lineUserId: null },
+            }),
+          ]
+        : []),
+      this.prisma.lineFriend.delete({ where: { id } }),
+    ]);
+  }
 }

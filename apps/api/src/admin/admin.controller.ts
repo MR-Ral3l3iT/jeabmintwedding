@@ -84,6 +84,14 @@ export class AdminController {
     return this.adminService.unlinkLineFriend(id);
   }
 
+  @Delete('line-friends/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'ลบรายชื่อ LINE ออกจากระบบ (Admin)' })
+  @ApiResponse({ status: 204 })
+  async deleteLineFriend(@Param('id') id: string): Promise<void> {
+    return this.adminService.deleteLineFriend(id);
+  }
+
   @Get('guest-categories')
   @ApiOperation({ summary: 'รายการประเภทแขก (Admin)' })
   @ApiResponse({ status: 200, type: [GuestCategoryResponseDto] })

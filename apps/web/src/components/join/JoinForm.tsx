@@ -14,7 +14,7 @@ import { getJoinGuest, submitJoin } from '@/lib/api';
 import { LineLinkHint } from '@/components/invite/LineLinkHint';
 import { InviteProvider } from '@/components/invite/InviteContext';
 import { useWeddingConfig } from '@/components/WeddingSettingsProvider';
-import { getLiffLinkUrl, HERO_GRADIENT } from '@/lib/constants';
+import { getLiffLineMeUrl, getLiffLinkUrl, HERO_GRADIENT } from '@/lib/constants';
 import {
   fillTemplate,
   getInviteMessages,
@@ -121,8 +121,8 @@ export function JoinForm({ token }: JoinFormProps) {
 
     if (result) {
       const lineUrl = result.lineOaUrl || config.lineOaUrl;
-      const liffUrl = getLiffLinkUrl(result.inviteToken);
-      const qrUrl = liffUrl ?? lineUrl;
+      const liffUrl = getLiffLineMeUrl(result.inviteToken) ?? getLiffLinkUrl(result.inviteToken);
+      const qrUrl = getLiffLinkUrl(result.inviteToken) ?? lineUrl;
       return (
         <Shell>
           <div className="text-center">

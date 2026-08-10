@@ -115,5 +115,16 @@ export function getJoinUrl(token?: string): string {
 export function getLiffLinkUrl(inviteToken: string): string | null {
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
   if (!liffId) return null;
+  // Prefer endpoint URL with token for QR / camera scans (query survives better than
+  // opening bare liff.line.me without params). Button can still open this URL;
+  // LINE will hand off into LIFF when opened from the LINE app.
+  const origin = getSiteOrigin();
+  return `${origin}/liff/link?token=${encodeURIComponent(inviteToken)}`;
+}
+
+/** Open-in-LINE URL (liff.line.me) — use when already inside LINE if needed */
+export function getLiffLineMeUrl(inviteToken: string): string | null {
+  const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
+  if (!liffId) return null;
   return `https://liff.line.me/${liffId}?token=${encodeURIComponent(inviteToken)}`;
 }

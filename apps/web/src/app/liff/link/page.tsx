@@ -9,6 +9,49 @@ import { HERO_GRADIENT } from '@/lib/constants';
 
 type Status = 'loading' | 'success' | 'error';
 
+const TOKEN_STORAGE_KEY = 'liff_invite_token';
+
+function readInviteToken(searchParams: URLSearchParams): string | null {
+  const fromNext = searchParams.get('token')?.trim();
+  if (fromNext) {
+    try {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, fromNext);
+    } catch {
+      // ignore
+    }
+    return fromNext;
+  }
+
+  if (typeof window !== 'undefined') {
+    const fromWindow = new URLSearchParams(window.location.search).get('token')?.trim();
+    if (fromWindow) {
+      try {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, fromWindow);
+      } catch {
+        // ignore
+      }
+      return fromWindow;
+    }
+
+    try {
+      const stored = sessionStorage.getItem(TOKEN_STORAGE_KEY)?.trim();
+      if (stored) return stored;
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
+}
+
+function clearStoredToken() {
+  try {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 function LiffLinkContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>('loading');
@@ -18,12 +61,14 @@ function LiffLinkContent() {
     let cancelled = false;
 
     async function run() {
-      const inviteToken = searchParams.get('token')?.trim();
+      const inviteToken = readInviteToken(searchParams);
       const liffId = process.env.NEXT_PUBLIC_LIFF_ID?.trim();
 
       if (!inviteToken) {
         setStatus('error');
-        setMessage('ไม่พบรหัสแขกในลิงก์ กรุณากลับไปหน้าลงทะเบียนแล้วลองใหม่');
+        setMessage(
+          'ไม่พบรหัสแขกในลิงก์ กรุณากลับไปหน้าลงทะเบียน แล้วกดปุ่ม “เปิดใน LINE เพื่อผูกบัญชี” อีกครั้ง',
+        );
         return;
       }
       if (!liffId) {
@@ -36,7 +81,9 @@ function LiffLinkContent() {
         await liff.init({ liffId });
 
         if (!liff.isLoggedIn()) {
-          liff.login({ redirectUri: window.location.href });
+          // Keep token in redirect URL — LIFF login often drops original query params
+          const redirectUri = `${window.location.origin}/liff/link?token=${encodeURIComponent(inviteToken)}`;
+          liff.login({ redirectUri });
           return;
         }
 
@@ -49,6 +96,7 @@ function LiffLinkContent() {
 
         const result = await linkLineViaLiff({ inviteToken, idToken });
         if (cancelled) return;
+        clearStoredToken();
         setStatus('success');
         setMessage(result.message || 'เชื่อมบัญชีเรียบร้อยแล้ว');
       } catch (err) {

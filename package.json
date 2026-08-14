@@ -14,6 +14,9 @@
     "prisma:migrate:deploy": "npm run migrate:deploy --workspace=packages/prisma",
     "prisma:seed": "npm run seed --workspace=packages/prisma",
     "prisma:studio": "npm run studio --workspace=packages/prisma",
-    "db:setup": "psql -h localhost -U $USER -d postgres -f scripts/setup-local-db.sql"
+    "db:setup": "psql -h localhost -U $USER -d postgres -f scripts/setup-local-db.sql",
+    "line:richmenu": "node scripts/setup-richmenu.mjs",
+    "line:richmenu:list": "node scripts/setup-richmenu.mjs --list",
+    "line:richmenu:preview": "python3 scripts/measure-richmenu.py docs/assets/richmenu-jm-wedding.png --overlay docs/assets/richmenu-areas-preview.png"
   }
 }

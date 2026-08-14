@@ -1,15 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { validateSignature, messagingApi, webhook } from '@line/bot-sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Content, GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SettingsService } from '@/settings/settings.service';
 import { BotStudioService } from '@/bot-studio/bot-studio.service';
+import { BotConversationService, BotTurn } from './bot-conversation.service';
+import { hasBotPrefix } from './bot-prefix';
+import { buildWelcomeFlex } from './flex/welcome.flex';
+import { buildChatHintFlex, buildSampleQuickReply } from './flex/chat-hint.flex';
+import { POSTBACK } from './flex/theme';
 
 const LINK_PATTERNS = [
   /^ผูก\s+([a-zA-Z0-9]+)$/i,
   /^link\s+([a-zA-Z0-9]+)$/i,
   /^bind\s+([a-zA-Z0-9]+)$/i,
 ];
+
+/**
+ * Google ปลดระวางรุ่นเก่าเงียบๆ (gemini-2.0-flash ตายไปแล้ว บอทเลยตอบ error อยู่พักหนึ่ง)
+ * เลยเปิดให้เปลี่ยนผ่าน env ได้ ไม่ต้องแก้โค้ด — ดูรุ่นที่ใช้ได้จาก
+ *   curl "https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY"
+ * flash-lite พอสำหรับ FAQ งานแต่ง และถูก/เร็วกว่า flash ตัวเต็มที่เผา thinking token
+ */
+const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-3.5-flash-lite';
+
+/**
+ * เพดานความยาวของบล็อกข้อมูลงาน ที่ส่งไปกับทุกคำถาม หัวข้อใน Bot Studio เพิ่มได้
+ * เรื่อยๆ ถ้าไม่คุมไว้ prompt จะโตขึ้นทุกครั้งที่มีคนเพิ่มหัวข้อ
+ */
+const MAX_KNOWLEDGE_CHARS = 6000;
 
 @Injectable()
 export class LineService {
@@ -23,6 +42,7 @@ export class LineService {
     private readonly prisma: PrismaService,
     private readonly settingsService: SettingsService,
     private readonly botStudioService: BotStudioService,
+    private readonly conversations: BotConversationService,
   ) {
     const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? '';
     this.channelSecret = process.env.LINE_CHANNEL_SECRET ?? '';
@@ -60,6 +80,10 @@ export class LineService {
         await this.onUnfollow(event);
         return;
       }
+      if (event.type === 'postback') {
+        await this.onPostback(event);
+        return;
+      }
       if (event.type === 'message' && event.message.type === 'text') {
         await this.onTextMessage(event);
       }
@@ -92,11 +116,40 @@ export class LineService {
 
     if (!event.replyToken) return;
 
-    const settings = await this.settingsService.getSettings();
-    await this.reply(
-      event.replyToken,
-      `ขอบคุณที่เพิ่มเพื่อนนะคะ 💚\nยินดีต้อนรับสู่ ${settings.brideNickname} & ${settings.groomNickname} Wedding\n\nถ้ามีลิงก์เชิญออนไลน์ พิมพ์:\nผูก <รหัสจากลิงก์>\nเพื่อเชื่อมบัญชีกับรายชื่อแขกได้ค่ะ`,
+    const [settings, persona] = await Promise.all([
+      this.settingsService.getSettings(),
+      this.botStudioService.getPersona(),
+    ]);
+
+    // การ์ดอย่างเดียว ไม่แนบวิธีพิมพ์ "ผูก <รหัส>" — แขกที่มาจากลิงก์เชิญถูกผูกผ่าน LIFF
+    // ให้อัตโนมัติอยู่แล้ว คำสั่งนั้นเหลือไว้เป็นทางสำรองเวลาต้องผูกให้ทีหลังเท่านั้น
+    await this.reply(event.replyToken, [
+      buildWelcomeFlex(
+        { displayName: profile?.displayName, pictureUrl: profile?.pictureUrl },
+        settings,
+        persona.displayName,
+      ),
+    ]);
+  }
+
+  /** ปุ่มบน rich menu ส่ง postback มาที่นี่ ปุ่มแบนเนอร์ตกลงมาแล้วถูกเมินตามตั้งใจ */
+  private async onPostback(event: webhook.PostbackEvent): Promise<void> {
+    if (event.postback?.data !== POSTBACK.chat) return;
+    const lineUserId = event.source?.userId;
+    if (!lineUserId || !event.replyToken) return;
+
+    const persona = await this.botStudioService.getPersona();
+
+    // กดปุ่มนี้ = เปิดโหมดคุย พิมพ์คำถามต่อได้เลยโดยไม่ต้องมีชื่อบอทนำหน้า
+    await this.conversations.markHinted(lineUserId);
+
+    const hint = buildChatHintFlex(
+      persona.displayName,
+      persona.selfCallName,
+      BotConversationService.IDLE_MINUTES,
     );
+    hint.quickReply = buildSampleQuickReply(persona.selfCallName);
+    await this.reply(event.replyToken, [hint]);
   }
 
   private async onUnfollow(event: webhook.UnfollowEvent): Promise<void> {
@@ -118,20 +171,59 @@ export class LineService {
     const token = this.extractLinkToken(text);
     if (token) {
       const result = await this.linkByInviteToken(lineUserId, token);
-      await this.reply(event.replyToken, result.message);
+      await this.reply(event.replyToken, [{ type: 'text', text: result.message }]);
       return;
     }
 
     if (!this.allowRate(lineUserId)) {
-      await this.reply(
-        event.replyToken,
-        'ขออภัยค่ะ ตอนนี้ข้อความเข้ามาเยอะ กรุณารอสักครู่แล้วลองใหม่นะคะ',
-      );
+      await this.reply(event.replyToken, [
+        {
+          type: 'text',
+          text: 'ขออภัยค่ะ ตอนนี้ข้อความเข้ามาเยอะ กรุณารอสักครู่แล้วลองใหม่นะคะ',
+        },
+      ]);
       return;
     }
 
-    const answer = await this.generateBotReply(lineUserId, text);
-    await this.reply(event.replyToken, answer);
+    const [persona, state] = await Promise.all([
+      this.botStudioService.getPersona(),
+      this.conversations.load(lineUserId),
+    ]);
+
+    /**
+     * แขกที่ยังไม่เคยรู้วิธีคุย และทักมาลอยๆ จะได้การ์ดสอนวิธีคุย *พร้อมคำตอบ*
+     * ในรอบเดียว (reply token ส่งได้ถึง 5 ข้อความ) — ส่งแต่การ์ดอย่างเดียวจะดูเหมือน
+     * คำถามเขาถูกเมิน ส่วนคนที่พิมพ์ชื่อบอทนำหน้าอยู่แล้วก็ไม่ต้องสอนอะไร
+     */
+    const needHint = !hasBotPrefix(text) && !state.active && !state.hintedRecently;
+
+    const answer = await this.generateBotReply({
+      lineUserId,
+      question: text,
+      history: state.history,
+      persona,
+    });
+
+    const reply: messagingApi.Message[] = [];
+    if (needHint) {
+      reply.push(
+        buildChatHintFlex(
+          persona.displayName,
+          persona.selfCallName,
+          BotConversationService.IDLE_MINUTES,
+        ),
+      );
+    }
+    reply.push({
+      type: 'text',
+      text: answer,
+      ...(needHint ? { quickReply: buildSampleQuickReply(persona.selfCallName) } : {}),
+    });
+
+    await this.reply(event.replyToken, reply);
+    await this.conversations.append(lineUserId, state.history, text, answer, {
+      hinted: needHint,
+    });
   }
 
   private extractLinkToken(text: string): string | null {
@@ -217,10 +309,24 @@ export class LineService {
     };
   }
 
-  private async generateBotReply(lineUserId: string, question: string): Promise<string> {
-    const [settings, persona, topics, friend] = await Promise.all([
+  private async generateBotReply(params: {
+    lineUserId: string;
+    question: string;
+    history: BotTurn[];
+    persona: {
+      displayName: string;
+      selfCallName: string;
+      tone: string;
+      languageNote: string;
+      emojiPolicy: string;
+      maxLength: number;
+      doNotDo: string;
+      whenUnknown: string;
+    };
+  }): Promise<string> {
+    const { lineUserId, question, history, persona } = params;
+    const [settings, topics, friend] = await Promise.all([
       this.settingsService.getSettings(),
-      this.botStudioService.getPersona(),
       this.botStudioService.listTopics(),
       this.prisma.lineFriend.findUnique({
         where: { lineUserId },
@@ -267,12 +373,15 @@ export class LineService {
         : '',
     ]
       .filter(Boolean)
-      .join('\n');
+      .join('\n')
+      .slice(0, MAX_KNOWLEDGE_CHARS);
 
     const maxLen = persona.maxLength || 500;
     const system = `คุณคือ ${persona.displayName} ผู้ช่วยงานแต่งของ ${settings.brideNickname} และ ${settings.groomNickname}
+แทนตัวเองว่า "${persona.selfCallName}" เสมอ ห้ามใช้ ฉัน/ดิฉัน/เรา/ผม
 โทนการพูด: ${persona.tone}
 ภาษา: ${persona.languageNote}
+อีโมจิ: ${persona.emojiPolicy}
 ความยาว: สั้นกระชับ ไม่เกิน ${maxLen} ตัวอักษร
 ความถูกต้อง: เวลา วันที่ ชื่อสถานที่ ชื่อคน เบอร์โทร และลิงก์ ต้องคัดลอกจาก "ข้อมูลงาน" ให้ตรงตัวอักษร ห้ามเดา ห้ามปรับ ห้ามปัดเวลา ถ้าข้อมูลงานไม่มีเรื่องที่ถูกถาม ให้บอกตรง ๆ ว่ายังไม่มีข้อมูลแล้วแนะนำให้ติดต่อเบอร์ข้างต้น
 สิ่งที่ห้ามทำ: ${persona.doNotDo}
@@ -281,19 +390,20 @@ export class LineService {
 ชื่อผู้ถาม: ${guestName}`;
 
     try {
-      const model = this.gemini.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      const result = await model.generateContent([
-        { text: system },
-        { text: `ข้อมูลงาน:\n${knowledge}` },
-        { text: `คำถามจากแขก: ${question}` },
-      ]);
+      // ข้อมูลงานอยู่ใน systemInstruction ไม่ใช่ในประวัติ — ประวัติจะได้เก็บแต่บทสนทนาจริง
+      const model = this.gemini.getGenerativeModel({
+        model: GEMINI_MODEL,
+        systemInstruction: `${system}\n\nข้อมูลงาน:\n${knowledge}`,
+      });
+      const chat = model.startChat({ history: this.toGeminiHistory(history) });
+      const result = await chat.sendMessage(question);
       const text = result.response.text()?.trim();
       const usage = result.response.usageMetadata;
       await this.botStudioService.logGeminiReply({
         promptTokens: usage?.promptTokenCount ?? null,
         completionTokens: usage?.candidatesTokenCount ?? null,
         totalTokens: usage?.totalTokenCount ?? null,
-        meta: { model: 'gemini-2.0-flash' },
+        meta: { model: GEMINI_MODEL, historyTurns: history.length },
       });
       if (!text) {
         return `ขออภัยค่ะ ตอบไม่สำเร็จ ลองถามใหม่หรือติดต่อ ${settings.rsvpContactPhone} ได้ค่ะ`;
@@ -303,6 +413,13 @@ export class LineService {
       this.logger.error('Gemini reply failed', error);
       return `ขออภัยค่ะ ระบบตอบข้อความขัดข้องชั่วคราว ติดต่อ ${settings.rsvpContactPhone} ได้ค่ะ`;
     }
+  }
+
+  private toGeminiHistory(history: BotTurn[]): Content[] {
+    return history.map((turn) => ({
+      role: turn.role,
+      parts: [{ text: turn.text }],
+    }));
   }
 
   private allowRate(lineUserId: string): boolean {
@@ -335,12 +452,16 @@ export class LineService {
     }
   }
 
-  private async reply(replyToken: string, text: string): Promise<void> {
-    if (!this.client) return;
+  /** LINE รับได้สูงสุด 5 ข้อความต่อหนึ่ง reply token */
+  private async reply(
+    replyToken: string,
+    messages: messagingApi.Message[],
+  ): Promise<void> {
+    if (!this.client || messages.length === 0) return;
     try {
       await this.client.replyMessage({
         replyToken,
-        messages: [{ type: 'text', text }],
+        messages: messages.slice(0, 5),
       });
     } catch (error) {
       this.logger.error('LINE reply failed', error);

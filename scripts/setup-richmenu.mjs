@@ -54,8 +54,15 @@ const RICH_MENU = {
       action: { type: 'uri', label: 'สถานที่จัดงาน', uri: MAPS_URL },
     },
     {
+      // postback ไม่ใช่ message: webhook แยกเคสนี้ได้ชัดโดยไม่ต้อง match ข้อความ
+      // และตอบด้วยการ์ดสอนวิธีคุยแทนที่จะยิงเข้า Gemini. ค่า data ต้องตรงกับ
+      // POSTBACK.chat ใน apps/api/src/line/flex/theme.ts
       bounds: { x: 785, y: 487, width: 415, height: 323 },
-      action: { type: 'message', text: 'สวัสดีน้องมายมิ้นท์ ขอสอบถามเรื่องงานแต่งค่ะ' },
+      action: {
+        type: 'postback',
+        data: 'richmenu=chat',
+        displayText: 'คุยกับน้องมายมิ้นท์',
+      },
     },
   ],
 };

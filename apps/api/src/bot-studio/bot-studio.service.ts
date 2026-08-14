@@ -16,10 +16,13 @@ import {
 
 const DEFAULT_PERSONA = {
   id: 'default',
-  displayName: 'ผู้ช่วยงานแต่ง Jeab & Mint',
+  displayName: 'น้องมายมิ้นท์',
+  selfCallName: 'มายมิ้นท์',
   tone: 'สุภาพ อบอุ่น เป็นกันเอง ใช้ภาษาที่อ่านง่าย',
   languageNote:
     'ตอบเป็นภาษาไทยเป็นหลัก ถ้าแขกถามเป็นภาษาอังกฤษให้ตอบอังกฤษได้',
+  emojiPolicy:
+    'ใส่ emoji 1-2 ตัวต่อข้อความ ให้เข้ากับอารมณ์ของคำถาม ไม่ใส่รัวๆ ไม่ใส่ทุกบรรทัด',
   maxLength: 500,
   doNotDo:
     'ห้ามแต่งข้อมูลที่ไม่มีในบริบท ห้ามสัญญาเรื่องที่ยังไม่ยืนยัน ห้ามเปิดเผยข้อมูลส่วนตัวของแขกคนอื่น',
@@ -60,8 +63,10 @@ export class BotStudioService {
       where: { id: 'default' },
       data: {
         displayName: dto.displayName,
+        selfCallName: dto.selfCallName,
         tone: dto.tone,
         languageNote: dto.languageNote,
+        emojiPolicy: dto.emojiPolicy,
         maxLength: dto.maxLength,
         doNotDo: dto.doNotDo,
         whenUnknown: dto.whenUnknown,

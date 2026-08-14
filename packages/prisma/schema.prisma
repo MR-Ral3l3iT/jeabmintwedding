@@ -133,14 +133,32 @@ model WeddingSettings {
 model BotPersona {
   id           String   @id @default("default")
   displayName  String   @map("display_name") @db.VarChar(100)
+  selfCallName String   @map("self_call_name") @db.VarChar(50)
   tone         String   @db.Text
   languageNote String   @map("language_note") @db.Text
+  emojiPolicy  String   @map("emoji_policy") @db.Text
   maxLength    Int      @default(500) @map("max_length")
   doNotDo      String   @map("do_not_do") @db.Text
   whenUnknown  String   @map("when_unknown") @db.Text
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("bot_personas")
+}
+
+/// ประวัติการคุยกับบอท — หนึ่งแถวต่อหนึ่ง LINE user, หมดอายุตามเวลาที่เงียบไป
+model BotConversation {
+  id            String    @id @default(cuid())
+  lineUserId    String    @unique @map("line_user_id") @db.VarChar(100)
+  /// [{ role: 'user' | 'model', text: string }] เก็บเฉพาะรอบล่าสุด
+  messages      Json      @default("[]")
+  lastMessageAt DateTime  @default(now()) @map("last_message_at")
+  /// ครั้งสุดท้ายที่ส่งคำแนะนำวิธีคุยให้ — กันไม่ให้ส่งซ้ำทุกข้อความ
+  hintedAt      DateTime? @map("hinted_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([lastMessageAt])
+  @@map("bot_conversations")
 }
 
 /// หัวข้อความรู้บอท (เพิ่ม/ลบได้ที่ Bot Studio)

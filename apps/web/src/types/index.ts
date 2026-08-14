@@ -149,8 +149,11 @@ export type UpdateWeddingSettingsPayload = Partial<
 export interface BotPersona {
   id: string;
   displayName: string;
+  /** คำที่บอทใช้แทนตัวเองเวลาตอบ เช่น "มายมิ้นท์" */
+  selfCallName: string;
   tone: string;
   languageNote: string;
+  emojiPolicy: string;
   maxLength: number;
   doNotDo: string;
   whenUnknown: string;

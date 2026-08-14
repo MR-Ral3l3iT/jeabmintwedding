@@ -25,6 +25,12 @@ export class UpdateBotPersonaDto {
   @MaxLength(100)
   displayName!: string;
 
+  @ApiProperty({ description: 'คำที่บอทใช้แทนตัวเองเวลาตอบ' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(50)
+  selfCallName!: string;
+
   @ApiProperty()
   @IsString()
   tone!: string;
@@ -32,6 +38,10 @@ export class UpdateBotPersonaDto {
   @ApiProperty()
   @IsString()
   languageNote!: string;
+
+  @ApiProperty({ description: 'กติกาการใส่อีโมจิในคำตอบ' })
+  @IsString()
+  emojiPolicy!: string;
 
   @ApiProperty()
   @IsInt()

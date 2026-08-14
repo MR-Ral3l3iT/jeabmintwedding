@@ -169,8 +169,10 @@ function PersonaPanel() {
     try {
       const updated = await updateBotPersona({
         displayName: form.displayName,
+        selfCallName: form.selfCallName,
         tone: form.tone,
         languageNote: form.languageNote,
+        emojiPolicy: form.emojiPolicy,
         maxLength: form.maxLength,
         doNotDo: form.doNotDo,
         whenUnknown: form.whenUnknown,
@@ -196,6 +198,20 @@ function PersonaPanel() {
           value={form.displayName}
           onChange={(e) => setForm({ ...form, displayName: e.target.value })}
         />
+        <p className="mt-1 text-xs text-[#8a8a8a]">
+          ใช้บนหัวการ์ด Flex และปุ่ม &ldquo;คุยกับ...&rdquo;
+        </p>
+      </Field>
+      <Field label="คำแทนตัวเองเวลาตอบ">
+        <input
+          className={inputClass}
+          maxLength={50}
+          value={form.selfCallName}
+          onChange={(e) => setForm({ ...form, selfCallName: e.target.value })}
+        />
+        <p className="mt-1 text-xs text-[#8a8a8a]">
+          บอทจะเรียกตัวเองด้วยคำนี้เสมอ และใช้เป็นตัวอย่างการพิมพ์ในการ์ดแนะนำ
+        </p>
       </Field>
       <Field label="โทนการพูด">
         <textarea
@@ -209,6 +225,13 @@ function PersonaPanel() {
           className={`${inputClass} min-h-[80px] resize-y`}
           value={form.languageNote}
           onChange={(e) => setForm({ ...form, languageNote: e.target.value })}
+        />
+      </Field>
+      <Field label="การใช้อีโมจิ">
+        <textarea
+          className={`${inputClass} min-h-[80px] resize-y`}
+          value={form.emojiPolicy}
+          onChange={(e) => setForm({ ...form, emojiPolicy: e.target.value })}
         />
       </Field>
       <Field label="ความยาวสูงสุด (ตัวอักษร)">

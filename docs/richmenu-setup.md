@@ -30,7 +30,12 @@ are no dead pixels between buttons:
 | banner | 0, 0, 1200, 487 | none (postback the webhook ignores) |
 | กำหนดการ | 0, 487, 414, 323 | sends `ขอดูกำหนดการงานแต่งค่ะ` |
 | สถานที่ | 414, 487, 371, 323 | opens Google Maps |
-| น้องมายมิ้นท์ | 785, 487, 415, 323 | sends a greeting to start the bot chat |
+| น้องมายมิ้นท์ | 785, 487, 415, 323 | postback `richmenu=chat` — bot replies with the how-to-chat card |
+
+The chat button is a postback rather than a message so the webhook can branch on
+it without string-matching, and so the tap does not answer through Gemini. Its
+`data` value must stay in sync with `POSTBACK.chat` in
+`apps/api/src/line/flex/theme.ts`.
 
 To eyeball the alignment, regenerate the overlay and open it:
 

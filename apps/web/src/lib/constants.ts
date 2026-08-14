@@ -4,8 +4,8 @@ export const WEDDING = {
   brideName: 'นิรมล เจตเพ็ญภาส',
   brideNickname: 'เจี๊ยบ',
   date: new Date('2026-10-31T14:00:00+07:00'),
-  venue: 'ณ อาคารอเนกประสงค์',
-  city: 'กรมยุทธบริการทหาร, กรุงเทพฯ',
+  venue: 'กรมยุทธบริการทหาร กองบัญชาการกองทัพไทย',
+  city: 'อาคารอเนกประสงค์ กรุงเทพฯ',
   promptpay: '081-234-5678', // TODO: เปลี่ยนเป็นเบอร์จริงก่อน go live
   promptpayName: 'นิรมล เจตเพ็ญภาส',
   lineOaId: '@528nhzxv',

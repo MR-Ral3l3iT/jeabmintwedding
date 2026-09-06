@@ -29,8 +29,8 @@ export const en: InviteMessages = {
     eyebrow: 'Venue',
     title: 'Gathering',
     directions: 'Get directions',
-    venueName: 'Support Services Department, Royal Thai Armed Forces Headquarters',
-    city: 'Multipurpose Building, Bangkok',
+    venueName: 'The Grand Ballroom, 2nd Floor, Multi-Purpose Building',
+    city: 'Support Services Department, Wongsawang Road, Bang Sue, Bangkok',
     timeline: {
       '14:00': 'Engagement procession',
       '15:30': 'Water blessing ceremony',

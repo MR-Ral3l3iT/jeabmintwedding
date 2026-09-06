@@ -34,7 +34,8 @@ export const en: InviteMessages = {
     timeline: {
       '14:00': 'Engagement procession',
       '15:30': 'Water blessing ceremony',
-      '18:30': 'Wedding reception',
+      '18:00': 'Wedding reception (Chinese banquet)',
+      '18:30': 'Wedding reception (Chinese banquet)',
     },
   },
   dress: {

@@ -19,7 +19,7 @@ export interface UploadedImageFile {
 const DEFAULT_TIMELINE: TimelineItemDto[] = [
   { time: '14:00', event: 'พิธีแห่ขันหมาก' },
   { time: '15:30', event: 'พิธีหลั่งน้ำพระพุทธมนต์' },
-  { time: '18:30', event: 'พิธีฉลองมงคลสมรส' },
+  { time: '18:00', event: 'พิธีฉลองมงคลสมรส (โต๊ะจีน)' },
 ];
 
 function getUploadDir(): string {

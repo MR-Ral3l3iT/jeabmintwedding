@@ -22,7 +22,7 @@ export const WEDDING = {
   timeline: [
     { time: '14:00', event: 'พิธีแห่ขันหมาก' },
     { time: '15:30', event: 'พิธีหลั่งน้ำพระพุทธมนต์' },
-    { time: '18:30', event: 'พิธีฉลองมงคลสมรส' },
+    { time: '18:00', event: 'พิธีฉลองมงคลสมรส (โต๊ะจีน)' },
   ],
   palette: [
     { hex: '#5D3A26', name: 'Warm Mocha' },

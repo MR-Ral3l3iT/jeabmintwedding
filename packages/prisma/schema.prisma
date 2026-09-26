@@ -15,7 +15,8 @@ model GuestCategory {
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
 
-  guests Guest[]
+  guests        Guest[]
+  seatingGroups SeatingGroup[]
 
   @@index([sortOrder])
   @@map("guest_categories")
@@ -46,9 +47,10 @@ model Guest {
   lineUserId    String?        @unique @db.VarChar(100)
   createdAt     DateTime       @default(now())
 
-  category   GuestCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  wish       Wish?
-  lineFriend LineFriend?
+  category       GuestCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  wish           Wish?
+  lineFriend     LineFriend?
+  seatingTable   SeatingTableGuest?
 
   @@index([attending])
   @@index([categoryId])
@@ -187,4 +189,61 @@ model BotUsageLog {
 
   @@index([provider, createdAt])
   @@map("bot_usage_logs")
+}
+
+enum SeatingSpotKind {
+  TABLE
+  FACILITY
+}
+
+/// โต๊ะ / จุดบนผังงาน (seed จาก docs/ผังงาน.pptx)
+model SeatingTable {
+  id             String          @id @default(cuid())
+  code           String          @unique @db.VarChar(20)
+  kind           SeatingSpotKind @default(TABLE)
+  label          String?         @db.VarChar(100)
+  xPercent       Float           @map("x_percent")
+  yPercent       Float           @map("y_percent")
+  widthPercent   Float           @map("width_percent")
+  heightPercent  Float           @map("height_percent")
+  groupId        String?         @map("group_id")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  group  SeatingGroup?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  guests SeatingTableGuest[]
+
+  @@index([kind])
+  @@index([groupId])
+  @@map("seating_tables")
+}
+
+/// กลุ่มป้ายโต๊ะ — ผูกประเภทการ์ด หรือชื่อกำหนดเอง
+model SeatingGroup {
+  id              String   @id @default(cuid())
+  guestCategoryId String?  @unique @map("guest_category_id")
+  customName      String?  @map("custom_name") @db.VarChar(100)
+  color           String   @default("#6b7c5e") @db.VarChar(20)
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  guestCategory GuestCategory? @relation(fields: [guestCategoryId], references: [id], onDelete: Cascade)
+  tables        SeatingTable[]
+
+  @@index([sortOrder])
+  @@map("seating_groups")
+}
+
+/// แขกที่ระบุโต๊ะไว้เป็นรายชื่อ (หนึ่งคนหนึ่งโต๊ะ)
+model SeatingTableGuest {
+  id        String   @id @default(cuid())
+  tableId   String   @map("table_id")
+  guestId   String   @unique @map("guest_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  table SeatingTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  guest Guest        @relation(fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([tableId])
+  @@map("seating_table_guests")
 }

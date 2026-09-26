@@ -4,6 +4,7 @@ import { Content, GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SettingsService } from '@/settings/settings.service';
 import { BotStudioService } from '@/bot-studio/bot-studio.service';
+import { SeatingService } from '@/admin/seating.service';
 import { BotConversationService, BotTurn } from './bot-conversation.service';
 import { hasBotPrefix } from './bot-prefix';
 import { buildWelcomeFlex } from './flex/welcome.flex';
@@ -43,6 +44,7 @@ export class LineService {
     private readonly settingsService: SettingsService,
     private readonly botStudioService: BotStudioService,
     private readonly conversations: BotConversationService,
+    private readonly seatingService: SeatingService,
   ) {
     const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN ?? '';
     this.channelSecret = process.env.LINE_CHANNEL_SECRET ?? '';
@@ -330,7 +332,7 @@ export class LineService {
       this.botStudioService.listTopics(),
       this.prisma.lineFriend.findUnique({
         where: { lineUserId },
-        include: { guest: { select: { displayName: true, name: true } } },
+        include: { guest: { select: { id: true, displayName: true, name: true } } },
       }),
     ]);
 
@@ -344,6 +346,10 @@ export class LineService {
 
     const guestName =
       friend?.guest?.displayName ?? friend?.guest?.name ?? friend?.displayName ?? 'แขกผู้มีเกียรติ';
+
+    const seatingSummary = await this.seatingService.buildBotKnowledgeSummary(
+      friend?.guest?.id ?? null,
+    );
 
     const timeline = settings.timeline
       .map((item) => `- ${item.time} ${item.event}`)
@@ -367,6 +373,10 @@ export class LineService {
       `เบอร์ติดต่อ: ${settings.rsvpContactPhone}`,
       `LINE OA: ${settings.lineOaId}`,
       timeline ? `กำหนดการ:\n${timeline}` : '',
+      seatingSummary,
+      !friend?.guest?.id
+        ? 'หมายเหตุโต๊ะส่วนตัว: ผู้ถามยังไม่ได้ผูกบัญชีกับรายชื่อแขก ถ้าถามว่าโต๊ะตัวเองอยู่ไหน ให้แนะนำให้ผูกบัญชีก่อน'
+        : '',
       topicKnowledge ? `ความรู้เพิ่มเติมจาก Bot Studio:\n${topicKnowledge}` : '',
       settings.botKnowledge
         ? `ข้อมูลเพิ่มเติม (legacy):\n${settings.botKnowledge}`

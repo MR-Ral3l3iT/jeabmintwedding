@@ -13,6 +13,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -46,6 +47,16 @@ import {
   LineFriendResponseDto,
   LinkLineFriendDto,
 } from './dto/line-friend.dto';
+import { SeatingService } from './seating.service';
+import {
+  CreateSeatingGroupDto,
+  SeatingGroupResponseDto,
+  SeatingGuestBriefDto,
+  SeatingPlanResponseDto,
+  SeatingSpotResponseDto,
+  SetTableGuestsDto,
+  SetTableGroupDto,
+} from './dto/seating.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -55,6 +66,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly settingsService: SettingsService,
+    private readonly seatingService: SeatingService,
   ) {}
 
   @Get('line-friends')
@@ -210,5 +222,58 @@ export class AdminController {
     @UploadedFile() file: UploadedImageFile,
   ): Promise<WeddingSettingsResponseDto> {
     return this.settingsService.uploadPaymentQr(file);
+  }
+
+  @Get('seating')
+  @ApiOperation({ summary: 'ผังโต๊ะ + กลุ่ม + แขกที่ยังไม่มีโต๊ะ' })
+  @ApiResponse({ status: 200, type: SeatingPlanResponseDto })
+  async getSeatingPlan(): Promise<SeatingPlanResponseDto> {
+    return this.seatingService.getPlan();
+  }
+
+  @Get('seating/groups')
+  @ApiOperation({ summary: 'รายการกลุ่มป้ายโต๊ะ' })
+  @ApiResponse({ status: 200, type: [SeatingGroupResponseDto] })
+  async getSeatingGroups(): Promise<SeatingGroupResponseDto[]> {
+    return this.seatingService.listGroups();
+  }
+
+  @Post('seating/groups')
+  @ApiOperation({ summary: 'สร้างกลุ่มกำหนดเอง (ไม่ใช่ประเภทการ์ด)' })
+  @ApiResponse({ status: 201, type: SeatingGroupResponseDto })
+  async createSeatingGroup(
+    @Body() dto: CreateSeatingGroupDto,
+  ): Promise<SeatingGroupResponseDto> {
+    return this.seatingService.createCustomGroup(dto);
+  }
+
+  @Put('seating/tables/:code/group')
+  @ApiOperation({ summary: 'ตั้ง/เคลียร์กลุ่มหลักของโต๊ะ' })
+  @ApiResponse({ status: 200, type: SeatingSpotResponseDto })
+  async setSeatingTableGroup(
+    @Param('code') code: string,
+    @Body() dto: SetTableGroupDto,
+  ): Promise<SeatingSpotResponseDto> {
+    return this.seatingService.setTableGroup(code, dto);
+  }
+
+  @Put('seating/tables/:code/guests')
+  @ApiOperation({ summary: 'ตั้งรายชื่อแขกบนโต๊ะ (แทนที่ชุดเดิม)' })
+  @ApiResponse({ status: 200, type: SeatingSpotResponseDto })
+  async setSeatingTableGuests(
+    @Param('code') code: string,
+    @Body() dto: SetTableGuestsDto,
+  ): Promise<SeatingSpotResponseDto> {
+    return this.seatingService.setTableGuests(code, dto);
+  }
+
+  @Get('seating/guests')
+  @ApiOperation({ summary: 'ค้นหาแขกสำหรับระบุลงโต๊ะ' })
+  @ApiResponse({ status: 200, type: [SeatingGuestBriefDto] })
+  async searchSeatingGuests(
+    @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+  ): Promise<SeatingGuestBriefDto[]> {
+    return this.seatingService.searchGuestsForAssign({ search, categoryId });
   }
 }

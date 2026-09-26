@@ -22,6 +22,10 @@ import type {
   BotBasicsPreview,
   BotLineUsage,
   BotGeminiUsage,
+  SeatingPlan,
+  SeatingGroup,
+  SeatingSpot,
+  SeatingGuestBrief,
 } from '@/types';
 
 function formatValidationString(raw: string): string {
@@ -461,4 +465,59 @@ export async function getBotLineUsage(): Promise<BotLineUsage> {
 
 export async function getBotGeminiUsage(): Promise<BotGeminiUsage> {
   return botStudioRequest<BotGeminiUsage>('/usage/gemini');
+}
+
+export async function getAdminSeatingPlan(token: string): Promise<SeatingPlan> {
+  return request<SeatingPlan>('/admin/seating', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createAdminSeatingGroup(
+  token: string,
+  customName: string,
+  color?: string,
+): Promise<SeatingGroup> {
+  return request<SeatingGroup>('/admin/seating/groups', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ customName, ...(color ? { color } : {}) }),
+  });
+}
+
+export async function setAdminSeatingTableGroup(
+  token: string,
+  code: string,
+  groupId: string | null,
+): Promise<SeatingSpot> {
+  return request<SeatingSpot>(`/admin/seating/tables/${encodeURIComponent(code)}/group`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ groupId }),
+  });
+}
+
+export async function setAdminSeatingTableGuests(
+  token: string,
+  code: string,
+  guestIds: string[],
+): Promise<SeatingSpot> {
+  return request<SeatingSpot>(`/admin/seating/tables/${encodeURIComponent(code)}/guests`, {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ guestIds }),
+  });
+}
+
+export async function searchAdminSeatingGuests(
+  token: string,
+  params: { search?: string; categoryId?: string } = {},
+): Promise<SeatingGuestBrief[]> {
+  const qs = new URLSearchParams();
+  if (params.search) qs.set('search', params.search);
+  if (params.categoryId) qs.set('categoryId', params.categoryId);
+  const query = qs.toString();
+  return request<SeatingGuestBrief[]>(`/admin/seating/guests${query ? `?${query}` : ''}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }

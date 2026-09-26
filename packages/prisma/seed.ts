@@ -48,6 +48,61 @@ async function main(): Promise<void> {
   });
 
   console.log('✅ Wedding settings seeded');
+
+  // Seating layout is seeded by migration; upsert here for fresh DBs that re-run seed.
+  const { readFileSync } = await import('fs');
+  const { join } = await import('path');
+  const layoutPath = join(__dirname, 'seating-layout.json');
+  const layout = JSON.parse(readFileSync(layoutPath, 'utf8')) as {
+    tables: { code: string; x: number; y: number; w: number; h: number }[];
+    facilities: { code: string; label: string; x: number; y: number; w: number; h: number }[];
+  };
+
+  for (const t of layout.tables) {
+    await prisma.seatingTable.upsert({
+      where: { code: t.code },
+      update: {
+        xPercent: t.x,
+        yPercent: t.y,
+        widthPercent: t.w,
+        heightPercent: t.h,
+        kind: 'TABLE',
+      },
+      create: {
+        id: `table-${t.code}`,
+        code: t.code,
+        kind: 'TABLE',
+        xPercent: t.x,
+        yPercent: t.y,
+        widthPercent: t.w,
+        heightPercent: t.h,
+      },
+    });
+  }
+  for (const f of layout.facilities) {
+    await prisma.seatingTable.upsert({
+      where: { code: f.code },
+      update: {
+        label: f.label,
+        xPercent: f.x,
+        yPercent: f.y,
+        widthPercent: f.w,
+        heightPercent: f.h,
+        kind: 'FACILITY',
+      },
+      create: {
+        id: f.code,
+        code: f.code,
+        kind: 'FACILITY',
+        label: f.label,
+        xPercent: f.x,
+        yPercent: f.y,
+        widthPercent: f.w,
+        heightPercent: f.h,
+      },
+    });
+  }
+  console.log(`✅ Seating layout seeded (${layout.tables.length} tables, ${layout.facilities.length} facilities)`);
 }
 
 main()

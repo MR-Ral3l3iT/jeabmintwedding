@@ -239,3 +239,41 @@ export interface ApiError {
   timestamp: string;
   path: string;
 }
+
+export interface SeatingGuestBrief {
+  id: string;
+  displayName: string;
+  categoryId?: string;
+  categoryName?: string;
+}
+
+export interface SeatingGroup {
+  id: string;
+  name: string;
+  guestCategoryId?: string;
+  customName?: string;
+  color: string;
+  sortOrder: number;
+  tableCodes: string[];
+}
+
+export interface SeatingSpot {
+  id: string;
+  code: string;
+  kind: 'TABLE' | 'FACILITY';
+  label?: string;
+  xPercent: number;
+  yPercent: number;
+  widthPercent: number;
+  heightPercent: number;
+  groupId?: string;
+  groupName?: string;
+  groupColor?: string;
+  guests: SeatingGuestBrief[];
+}
+
+export interface SeatingPlan {
+  spots: SeatingSpot[];
+  groups: SeatingGroup[];
+  unassignedGuests: SeatingGuestBrief[];
+}

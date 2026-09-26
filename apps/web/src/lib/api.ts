@@ -476,12 +476,37 @@ export async function getAdminSeatingPlan(token: string): Promise<SeatingPlan> {
 export async function createAdminSeatingGroup(
   token: string,
   customName: string,
+  shortName: string,
   color?: string,
 ): Promise<SeatingGroup> {
   return request<SeatingGroup>('/admin/seating/groups', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ customName, ...(color ? { color } : {}) }),
+    body: JSON.stringify({ customName, shortName, ...(color ? { color } : {}) }),
+  });
+}
+
+export async function updateAdminSeatingGroup(
+  token: string,
+  id: string,
+  payload: { customName?: string; shortName?: string; color?: string },
+): Promise<SeatingGroup> {
+  return request<SeatingGroup>(`/admin/seating/groups/${id}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setAdminSeatingTablesGroup(
+  token: string,
+  codes: string[],
+  groupId: string | null,
+): Promise<SeatingSpot[]> {
+  return request<SeatingSpot[]>('/admin/seating/tables/group', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ codes, groupId }),
   });
 }
 

@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsNotEmpty,
   IsOptional,
@@ -29,6 +30,9 @@ export class SeatingGroupResponseDto {
 
   @ApiProperty()
   name: string;
+
+  @ApiProperty()
+  shortName: string;
 
   @ApiPropertyOptional()
   guestCategoryId?: string;
@@ -78,6 +82,9 @@ export class SeatingSpotResponseDto {
   groupName?: string;
 
   @ApiPropertyOptional()
+  groupShortName?: string;
+
+  @ApiPropertyOptional()
   groupColor?: string;
 
   @ApiProperty({ type: [SeatingGuestBriefDto] })
@@ -102,7 +109,35 @@ export class CreateSeatingGroupDto {
   @MaxLength(100)
   customName: string;
 
+  @ApiProperty({ example: 'เจ้าภาพ', maxLength: 20 })
+  @IsString()
+  @IsNotEmpty({ message: 'กรุณากรอกชื่อย่อ' })
+  @MaxLength(20, { message: 'ชื่อย่อยาวเกิน 20 ตัวอักษร' })
+  shortName: string;
+
   @ApiPropertyOptional({ example: '#8B5E3C' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  color?: string;
+}
+
+export class UpdateSeatingGroupDto {
+  @ApiPropertyOptional({ maxLength: 100 })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  customName?: string;
+
+  @ApiPropertyOptional({ maxLength: 20 })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  shortName?: string;
+
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   @MaxLength(20)
@@ -111,6 +146,21 @@ export class CreateSeatingGroupDto {
 
 export class SetTableGroupDto {
   @ApiPropertyOptional({ description: 'id ของ seating group — ส่ง null/ว่างเพื่อเคลียร์' })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== '')
+  @IsString()
+  groupId?: string | null;
+}
+
+export class SetTablesGroupDto {
+  @ApiProperty({ type: [String], example: ['A1', 'A2', 'B1'] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(80)
+  @IsString({ each: true })
+  codes: string[];
+
+  @ApiPropertyOptional({ description: 'id กลุ่ม — null/ว่างเพื่อเคลียร์' })
   @IsOptional()
   @ValidateIf((_, v) => v !== null && v !== '')
   @IsString()

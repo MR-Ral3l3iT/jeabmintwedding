@@ -12,6 +12,8 @@ import {
   SeatingSpotResponseDto,
   SetTableGuestsDto,
   SetTableGroupDto,
+  SetTablesGroupDto,
+  UpdateSeatingGroupDto,
 } from './dto/seating.dto';
 
 const GROUP_COLORS = [
@@ -23,7 +25,40 @@ const GROUP_COLORS = [
   '#6B8F71',
   '#9A6B5A',
   '#4F6F8F',
+  '#C45C26',
+  '#2F6B5A',
+  '#8C4A6B',
+  '#5A6B2F',
+  '#6B4F3A',
+  '#3A5A8C',
+  '#A35D6A',
+  '#4A7A6B',
 ];
+
+const tableInclude = {
+  group: {
+    include: { guestCategory: { select: { name: true } } },
+  },
+  guests: {
+    include: {
+      guest: {
+        select: {
+          id: true,
+          displayName: true,
+          name: true,
+          categoryId: true,
+          category: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
+};
+
+const groupInclude = {
+  guestCategory: { select: { name: true } },
+  tables: { where: { kind: 'TABLE' as const }, select: { code: true } },
+};
 
 @Injectable()
 export class SeatingService {
@@ -34,32 +69,11 @@ export class SeatingService {
 
     const [tables, groups, assignedGuestIds] = await Promise.all([
       this.prisma.seatingTable.findMany({
-        include: {
-          group: {
-            include: { guestCategory: { select: { name: true } } },
-          },
-          guests: {
-            include: {
-              guest: {
-                select: {
-                  id: true,
-                  displayName: true,
-                  name: true,
-                  categoryId: true,
-                  category: { select: { name: true } },
-                },
-              },
-            },
-            orderBy: { createdAt: 'asc' },
-          },
-        },
+        include: tableInclude,
         orderBy: [{ kind: 'asc' }, { code: 'asc' }],
       }),
       this.prisma.seatingGroup.findMany({
-        include: {
-          guestCategory: { select: { name: true } },
-          tables: { where: { kind: 'TABLE' }, select: { code: true } },
-        },
+        include: groupInclude,
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       }),
       this.prisma.seatingTableGuest.findMany({ select: { guestId: true } }),
@@ -92,10 +106,7 @@ export class SeatingService {
   async listGroups(): Promise<SeatingGroupResponseDto[]> {
     await this.syncGroupsFromCategories();
     const groups = await this.prisma.seatingGroup.findMany({
-      include: {
-        guestCategory: { select: { name: true } },
-        tables: { where: { kind: 'TABLE' }, select: { code: true } },
-      },
+      include: groupInclude,
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
     return groups.map((g) => this.toGroupDto(g));
@@ -103,27 +114,64 @@ export class SeatingService {
 
   async createCustomGroup(dto: CreateSeatingGroupDto): Promise<SeatingGroupResponseDto> {
     const name = dto.customName.trim();
+    const shortName = dto.shortName.trim();
     if (!name) throw new BadRequestException('กรุณากรอกชื่อกลุ่ม');
+    if (!shortName) throw new BadRequestException('กรุณากรอกชื่อย่อ');
 
     const count = await this.prisma.seatingGroup.count();
+    const color = dto.color?.trim() || (await this.nextUniqueColor());
     const row = await this.prisma.seatingGroup.create({
       data: {
         customName: name,
-        color: dto.color?.trim() || GROUP_COLORS[count % GROUP_COLORS.length],
+        shortName,
+        color,
         sortOrder: 100 + count,
       },
-      include: {
-        guestCategory: { select: { name: true } },
-        tables: { where: { kind: 'TABLE' }, select: { code: true } },
+      include: groupInclude,
+    });
+    return this.toGroupDto(row);
+  }
+
+  async updateGroup(id: string, dto: UpdateSeatingGroupDto): Promise<SeatingGroupResponseDto> {
+    const existing = await this.prisma.seatingGroup.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('ไม่พบกลุ่ม');
+
+    if (existing.guestCategoryId && dto.customName !== undefined) {
+      throw new BadRequestException('กลุ่มจากประเภทการ์ดแก้ชื่อเต็มไม่ได้ — แก้ที่ประเภทแขกแทน');
+    }
+
+    const row = await this.prisma.seatingGroup.update({
+      where: { id },
+      data: {
+        ...(dto.customName !== undefined && { customName: dto.customName.trim() }),
+        ...(dto.shortName !== undefined && { shortName: dto.shortName.trim() }),
+        ...(dto.color !== undefined && { color: dto.color.trim() }),
       },
+      include: groupInclude,
     });
     return this.toGroupDto(row);
   }
 
   async setTableGroup(code: string, dto: SetTableGroupDto): Promise<SeatingSpotResponseDto> {
-    const table = await this.requireTable(code);
-    if (table.kind !== 'TABLE') {
-      throw new BadRequestException('จุดนี้ไม่ใช่โต๊ะนั่ง');
+    const spots = await this.setTablesGroup({
+      codes: [code],
+      groupId: dto.groupId,
+    });
+    return spots[0];
+  }
+
+  async setTablesGroup(dto: SetTablesGroupDto): Promise<SeatingSpotResponseDto[]> {
+    const codes = [...new Set(dto.codes.map((c) => c.trim()).filter(Boolean))];
+    if (!codes.length) throw new BadRequestException('กรุณาเลือกโต๊ะอย่างน้อย 1 ตัว');
+
+    const tables = await this.prisma.seatingTable.findMany({
+      where: { code: { in: codes } },
+    });
+    if (tables.length !== codes.length) {
+      throw new NotFoundException('พบรหัสโต๊ะที่ไม่มีในผัง');
+    }
+    if (tables.some((t) => t.kind !== 'TABLE')) {
+      throw new BadRequestException('เลือกได้เฉพาะโต๊ะนั่ง');
     }
 
     const groupId = dto.groupId?.trim() || null;
@@ -132,28 +180,17 @@ export class SeatingService {
       if (!group) throw new NotFoundException('ไม่พบกลุ่ม');
     }
 
-    const updated = await this.prisma.seatingTable.update({
-      where: { id: table.id },
+    await this.prisma.seatingTable.updateMany({
+      where: { code: { in: codes } },
       data: { groupId },
-      include: {
-        group: { include: { guestCategory: { select: { name: true } } } },
-        guests: {
-          include: {
-            guest: {
-              select: {
-                id: true,
-                displayName: true,
-                name: true,
-                categoryId: true,
-                category: { select: { name: true } },
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
     });
-    return this.toSpotDto(updated);
+
+    const updated = await this.prisma.seatingTable.findMany({
+      where: { code: { in: codes } },
+      include: tableInclude,
+      orderBy: { code: 'asc' },
+    });
+    return updated.map((t) => this.toSpotDto(t));
   }
 
   async setTableGuests(code: string, dto: SetTableGuestsDto): Promise<SeatingSpotResponseDto> {
@@ -174,7 +211,6 @@ export class SeatingService {
     }
 
     await this.prisma.$transaction(async (tx) => {
-      // ย้ายแขกที่อยู่โต๊ะอื่นออกก่อน แล้วใส่ชุดใหม่บนโต๊ะนี้
       if (guestIds.length) {
         await tx.seatingTableGuest.deleteMany({
           where: { guestId: { in: guestIds } },
@@ -190,23 +226,7 @@ export class SeatingService {
 
     const updated = await this.prisma.seatingTable.findUniqueOrThrow({
       where: { id: table.id },
-      include: {
-        group: { include: { guestCategory: { select: { name: true } } } },
-        guests: {
-          include: {
-            guest: {
-              select: {
-                id: true,
-                displayName: true,
-                name: true,
-                categoryId: true,
-                category: { select: { name: true } },
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
-      },
+      include: tableInclude,
     });
     return this.toSpotDto(updated);
   }
@@ -242,14 +262,12 @@ export class SeatingService {
 
     return rows.map((g) => ({
       ...this.toGuestBrief(g),
-      // surface current table in categoryName suffix via display for UI — keep DTO lean
       categoryName: g.seatingTable?.table.code
         ? `${g.category?.name ?? 'ยังไม่ระบุ'} · โต๊ะ ${g.seatingTable.table.code}`
         : (g.category?.name ?? undefined),
     }));
   }
 
-  /** สรุปแผนที่นั่งสั้น ๆ สำหรับบอท */
   async buildBotKnowledgeSummary(guestId?: string | null): Promise<string> {
     const tables = await this.prisma.seatingTable.findMany({
       where: { kind: 'TABLE' },
@@ -301,7 +319,6 @@ export class SeatingService {
           `โต๊ะของ ${label}: ${mine.table.code}${gName ? ` (กลุ่ม ${gName})` : ''}`,
         );
       } else {
-        // fallback: guest's card category → tables with that group
         const guest = await this.prisma.guest.findUnique({
           where: { id: guestId },
           select: {
@@ -335,18 +352,83 @@ export class SeatingService {
     const categories = await this.prisma.guestCategory.findMany({
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
-    for (let i = 0; i < categories.length; i++) {
-      const cat = categories[i];
-      await this.prisma.seatingGroup.upsert({
+    const usedColors = new Set(
+      (await this.prisma.seatingGroup.findMany({ select: { color: true } })).map(
+        (g) => g.color.toLowerCase(),
+      ),
+    );
+
+    for (const cat of categories) {
+      const existing = await this.prisma.seatingGroup.findUnique({
         where: { guestCategoryId: cat.id },
-        update: { sortOrder: cat.sortOrder },
-        create: {
+      });
+      if (existing) {
+        await this.prisma.seatingGroup.update({
+          where: { id: existing.id },
+          data: {
+            sortOrder: cat.sortOrder,
+            ...(!existing.shortName?.trim()
+              ? { shortName: this.defaultShortName(cat.name) }
+              : {}),
+          },
+        });
+        continue;
+      }
+
+      const color = this.pickUnusedColor(usedColors);
+      usedColors.add(color.toLowerCase());
+      await this.prisma.seatingGroup.create({
+        data: {
           guestCategoryId: cat.id,
-          color: GROUP_COLORS[i % GROUP_COLORS.length],
+          shortName: this.defaultShortName(cat.name),
+          color,
           sortOrder: cat.sortOrder,
         },
       });
     }
+  }
+
+  private async nextUniqueColor(): Promise<string> {
+    const used = new Set(
+      (await this.prisma.seatingGroup.findMany({ select: { color: true } })).map(
+        (g) => g.color.toLowerCase(),
+      ),
+    );
+    return this.pickUnusedColor(used);
+  }
+
+  private pickUnusedColor(used: Set<string>): string {
+    for (const color of GROUP_COLORS) {
+      if (!used.has(color.toLowerCase())) return color;
+    }
+    // Fallback: spaced HSL hues
+    for (let i = 0; i < 36; i++) {
+      const hue = (i * 37) % 360;
+      const color = this.hslToHex(hue, 42, 42);
+      if (!used.has(color.toLowerCase())) return color;
+    }
+    return `#${Math.floor(Math.random() * 0xffffff)
+      .toString(16)
+      .padStart(6, '0')}`;
+  }
+
+  private hslToHex(h: number, s: number, l: number): string {
+    const sat = s / 100;
+    const lig = l / 100;
+    const a = sat * Math.min(lig, 1 - lig);
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = lig - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color)
+        .toString(16)
+        .padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+
+  private defaultShortName(fullName: string): string {
+    const trimmed = fullName.trim();
+    return trimmed.slice(0, 4) || 'กลุ่ม';
   }
 
   private async requireTable(code: string) {
@@ -383,6 +465,7 @@ export class SeatingService {
     group?: {
       id: string;
       customName: string | null;
+      shortName: string;
       color: string;
       guestCategory?: { name: string } | null;
     } | null;
@@ -408,6 +491,7 @@ export class SeatingService {
       groupId: t.groupId ?? undefined,
       groupName:
         t.group?.guestCategory?.name ?? t.group?.customName ?? undefined,
+      groupShortName: t.group?.shortName,
       groupColor: t.group?.color,
       guests: t.guests.map((row) => this.toGuestBrief(row.guest)),
     };
@@ -417,6 +501,7 @@ export class SeatingService {
     id: string;
     guestCategoryId: string | null;
     customName: string | null;
+    shortName: string;
     color: string;
     sortOrder: number;
     guestCategory?: { name: string } | null;
@@ -425,6 +510,7 @@ export class SeatingService {
     return {
       id: g.id,
       name: g.guestCategory?.name ?? g.customName ?? 'ไม่มีชื่อ',
+      shortName: g.shortName,
       guestCategoryId: g.guestCategoryId ?? undefined,
       customName: g.customName ?? undefined,
       color: g.color,

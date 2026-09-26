@@ -56,6 +56,8 @@ import {
   SeatingSpotResponseDto,
   SetTableGuestsDto,
   SetTableGroupDto,
+  SetTablesGroupDto,
+  UpdateSeatingGroupDto,
 } from './dto/seating.dto';
 
 @ApiTags('Admin')
@@ -245,6 +247,25 @@ export class AdminController {
     @Body() dto: CreateSeatingGroupDto,
   ): Promise<SeatingGroupResponseDto> {
     return this.seatingService.createCustomGroup(dto);
+  }
+
+  @Patch('seating/groups/:id')
+  @ApiOperation({ summary: 'แก้ชื่อย่อ / ชื่อกลุ่มกำหนดเอง' })
+  @ApiResponse({ status: 200, type: SeatingGroupResponseDto })
+  async updateSeatingGroup(
+    @Param('id') id: string,
+    @Body() dto: UpdateSeatingGroupDto,
+  ): Promise<SeatingGroupResponseDto> {
+    return this.seatingService.updateGroup(id, dto);
+  }
+
+  @Put('seating/tables/group')
+  @ApiOperation({ summary: 'ตั้ง/เคลียร์กลุ่มหลักหลายโต๊ะพร้อมกัน' })
+  @ApiResponse({ status: 200, type: [SeatingSpotResponseDto] })
+  async setSeatingTablesGroup(
+    @Body() dto: SetTablesGroupDto,
+  ): Promise<SeatingSpotResponseDto[]> {
+    return this.seatingService.setTablesGroup(dto);
   }
 
   @Put('seating/tables/:code/group')

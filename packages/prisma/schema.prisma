@@ -223,6 +223,7 @@ model SeatingGroup {
   id              String   @id @default(cuid())
   guestCategoryId String?  @unique @map("guest_category_id")
   customName      String?  @map("custom_name") @db.VarChar(100)
+  shortName       String   @map("short_name") @db.VarChar(20)
   color           String   @default("#6b7c5e") @db.VarChar(20)
   sortOrder       Int      @default(0) @map("sort_order")
   createdAt       DateTime @default(now()) @map("created_at")

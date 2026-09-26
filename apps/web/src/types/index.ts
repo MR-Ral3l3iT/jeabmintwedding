@@ -250,6 +250,7 @@ export interface SeatingGuestBrief {
 export interface SeatingGroup {
   id: string;
   name: string;
+  shortName: string;
   guestCategoryId?: string;
   customName?: string;
   color: string;
@@ -268,6 +269,7 @@ export interface SeatingSpot {
   heightPercent: number;
   groupId?: string;
   groupName?: string;
+  groupShortName?: string;
   groupColor?: string;
   guests: SeatingGuestBrief[];
 }

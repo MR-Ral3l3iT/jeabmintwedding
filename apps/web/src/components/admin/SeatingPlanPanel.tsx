@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Plus, Search, Table2, X } from 'lucide-react';
+import { FileDown, Loader2, Plus, Search, Table2, X } from 'lucide-react';
 import {
   createAdminSeatingGroup,
   getAdminSeatingPlan,
@@ -11,6 +11,7 @@ import {
   updateAdminSeatingGroup,
 } from '@/lib/api';
 import { AdminSelect } from '@/components/admin/AdminSelect';
+import { exportSeatingExcel } from '@/lib/exportSeatingExcel';
 import type { SeatingGuestBrief, SeatingPlan, SeatingSpot } from '@/types';
 
 function getToken(): string {
@@ -32,6 +33,7 @@ export function SeatingPlanPanel() {
   const [guestSearch, setGuestSearch] = useState('');
   const [searchResults, setSearchResults] = useState<SeatingGuestBrief[]>([]);
   const [searching, setSearching] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -148,6 +150,19 @@ export function SeatingPlanPanel() {
     }
   }
 
+  async function handleExportExcel() {
+    if (!plan) return;
+    setExporting(true);
+    setActionError('');
+    try {
+      await exportSeatingExcel(plan);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Export Excel ไม่สำเร็จ');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleCreateGroup() {
     const name = customGroupName.trim();
     const shortName = customShortName.trim();
@@ -260,7 +275,22 @@ export function SeatingPlanPanel() {
             <span className="h-3 w-3 rounded-sm bg-[#6b7c5e] ring-2 ring-[#d4b87a]" />
             มีรายชื่อคน / กำลังเลือก
           </span>
-          <span className="ml-auto">{tables.length} โต๊ะ</span>
+          <span className="ml-auto inline-flex items-center gap-2">
+            <span>{tables.length} โต๊ะ</span>
+            <button
+              type="button"
+              onClick={() => void handleExportExcel()}
+              disabled={exporting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#c5cfc5] bg-white px-2.5 py-1 text-[0.72rem] font-medium text-[#3d4f3a] transition-colors hover:bg-[#eef2ea] disabled:opacity-60"
+            >
+              {exporting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              ) : (
+                <FileDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              Export Excel
+            </button>
+          </span>
         </div>
 
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl border border-[#e5e9e0] bg-[#f7f4ee]">

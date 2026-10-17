@@ -156,7 +156,7 @@ export class SetTablesGroupDto {
   @ApiProperty({ type: [String], example: ['A1', 'A2', 'B1'] })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(80)
+  @ArrayMaxSize(90)
   @IsString({ each: true })
   codes: string[];
 

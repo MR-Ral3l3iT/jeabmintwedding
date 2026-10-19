@@ -27,9 +27,9 @@ export class BotConversationService {
   private readonly logger = new Logger(BotConversationService.name);
 
   /** เงียบเกินเท่านี้ถือว่าจบบทสนทนา เริ่มนับใหม่ */
-  static readonly IDLE_MINUTES = 30;
-  /** เก็บ 6 คู่ถาม-ตอบ = 12 turn — พอให้อ้างถึงเรื่องที่คุยค้างไว้โดยไม่บวม prompt */
-  private static readonly MAX_TURNS = 12;
+  static readonly IDLE_MINUTES = 45;
+  /** เก็บ 8 คู่ถาม-ตอบ = 16 turn — พอคุยเล่นต่อเนื่องโดยไม่บวม prompt */
+  private static readonly MAX_TURNS = 16;
   /** ตัดข้อความยาวๆ ก่อนเก็บ กันคำตอบเดียวกินโควตาประวัติทั้งก้อน */
   private static readonly MAX_TEXT_CHARS = 300;
   /** ไม่ยัดการ์ดสอนวิธีคุยให้คนเดิมบ่อยกว่านี้ */

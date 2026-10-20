@@ -7,6 +7,12 @@ import { BotStudioService } from '@/bot-studio/bot-studio.service';
 import { SeatingService } from '@/admin/seating.service';
 import { BotConversationService, BotTurn } from './bot-conversation.service';
 import { hasBotPrefix } from './bot-prefix';
+import {
+  buildGuestMediaImageMessages,
+  detectGuestMediaIntents,
+  DRESS_KNOWLEDGE,
+  PARKING_KNOWLEDGE,
+} from './bot-media';
 import { buildWelcomeFlex } from './flex/welcome.flex';
 import { buildChatHintFlex, buildSampleQuickReply } from './flex/chat-hint.flex';
 import { POSTBACK } from './flex/theme';
@@ -222,6 +228,9 @@ export class LineService {
       ...(needHint ? { quickReply: buildSampleQuickReply(persona.selfCallName) } : {}),
     });
 
+    const mediaIntents = detectGuestMediaIntents(text);
+    reply.push(...buildGuestMediaImageMessages(mediaIntents));
+
     await this.reply(event.replyToken, reply);
     await this.conversations.append(lineUserId, state.history, text, answer, {
       hinted: needHint,
@@ -373,6 +382,8 @@ export class LineService {
       `เบอร์ติดต่อ: ${settings.rsvpContactPhone}`,
       `LINE OA: ${settings.lineOaId}`,
       timeline ? `กำหนดการ:\n${timeline}` : '',
+      PARKING_KNOWLEDGE,
+      DRESS_KNOWLEDGE,
       seatingSummary,
       !friend?.guest?.id
         ? 'หมายเหตุโต๊ะส่วนตัว: ผู้ถามยังไม่ได้ผูกบัญชีกับรายชื่อแขก ถ้าถามว่าโต๊ะตัวเองอยู่ไหน ให้แนะนำให้ผูกบัญชีก่อน'
